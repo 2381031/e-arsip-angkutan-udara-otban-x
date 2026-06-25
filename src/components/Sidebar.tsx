@@ -79,10 +79,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <div className="text-center mt-3 px-4">
             <h1 className="font-display font-extrabold text-sm tracking-wide text-emerald-700 dark:text-emerald-400">
-              E-ARSIP OTBAN X
+              E-ARSIP ANGUD 
             </h1>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 tracking-wider uppercase">
-              Wilayah X - Merauke
+              OTBAN X - MERAUKE
             </p>
           </div>
         )}

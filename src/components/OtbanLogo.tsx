@@ -12,7 +12,7 @@ interface LogoProps {
 // - Jika Anda menggunakan file lokal, letakkan di folder 'uploads/' dan isi dengan '/uploads/nama_file.png'
 // - Atau Anda bisa menggunakan URL eksternal langsung (misal: 'https://example.com/logo.png')
 // Jika gambar tidak ditemukan atau gagal dimuat, aplikasi akan otomatis memunculkan logo SVG OTBAN default yang sangat elegan.
-const CUSTOM_LOGO_URL = "assets/logo.jpeg"; 
+const CUSTOM_LOGO_URL = "/assets/logo.jpeg"; 
 
 export const OtbanLogo: React.FC<LogoProps> = ({ className = "w-16 h-16", showText = false }) => {
   const [imageError, setImageError] = useState(false);

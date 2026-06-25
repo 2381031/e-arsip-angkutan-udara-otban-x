@@ -180,7 +180,8 @@ export default function App() {
             onPreviewDocument={handlePreviewDocumentShortcut}
           />
         );
-
+        
+      case "peraturan":
       case "pengawasan":
       case "rapat":
       case "pprp":

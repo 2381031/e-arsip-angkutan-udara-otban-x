@@ -58,13 +58,14 @@ export interface DashboardMetrics {
   recentDocs: Dokumen[];
 }
 
-export type ActiveMenu = 
-  | "dashboard" 
-  | "pengawasan" 
-  | "rapat" 
-  | "pprp" 
-  | "lalu_lintas" 
+export type ActiveMenu =
+  | "dashboard"
+  | "pengawasan"
+  | "peraturan"
+  | "rapat"
+  | "pprp"
+  | "lalu_lintas"
   | "rekonsiliasi"
+  | "airports"
   | "admins"
-  | "logs"
-  | "airports";
+  | "logs";

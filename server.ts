@@ -513,14 +513,12 @@ app.delete("/api/dokumen/:id", authenticateToken, async (req: any, res) => {
   const list = await dbService.getDokumen();
   const doc = list.find(d => d.id === id);
 
-  if (!doc) {
-    return res.status(404).json({ message: "Dokumen tidak ditemukan." });
-  }
-
-try {
-    await del(doc.file_url);
-} catch (err) {
-    console.error(err);
+ if (doc.file_url?.includes("blob.vercel-storage.com")) {
+    try {
+        await del(doc.file_url);
+    } catch (err) {
+        console.error("Gagal menghapus Blob:", err);
+    }
 }
 
   await dbService.deleteDokumen(id);

@@ -38,15 +38,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
 }) => {
-  const mainMenu = [
-    { id: "dashboard" as ActiveMenu, label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: "pengawasan" as ActiveMenu, label: "Pengawasan", icon: <ShieldCheck className="w-5 h-5" /> },
-    { id: "rapat" as ActiveMenu, label: "Rapat", icon: <Users className="w-5 h-5" /> },
-    { id: "pprp" as ActiveMenu, label: "PPRP", icon: <Compass className="w-5 h-5" /> },
-    { id: "lalu_lintas" as ActiveMenu, label: "Lalu Lintas", icon: <Plane className="w-5 h-5" /> },
-    { id: "rekonsiliasi" as ActiveMenu, label: "Rekonsiliasi", icon: <Scale className="w-5 h-5" /> },
-  ];
+ const mainMenu = [
+  { id: "dashboard" as ActiveMenu, label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
 
+  { id: "pengawasan" as ActiveMenu, label: "Arsip Pengawasan", icon: <ShieldCheck className="w-5 h-5" /> },
+
+  { id: "peraturan" as ActiveMenu, label: "Arsip Peraturan", icon: <FolderArchive className="w-5 h-5" /> },
+
+  { id: "rapat" as ActiveMenu, label: "Rapat", icon: <Users className="w-5 h-5" /> },
+
+  { id: "pprp" as ActiveMenu, label: "PPRP", icon: <Compass className="w-5 h-5" /> },
+
+  { id: "lalu_lintas" as ActiveMenu, label: "Lalu Lintas", icon: <Plane className="w-5 h-5" /> },
+
+  { id: "rekonsiliasi" as ActiveMenu, label: "Rekonsiliasi", icon: <Scale className="w-5 h-5" /> },
+];
   const adminMenu = [
     { id: "airports" as ActiveMenu, label: "Daftar Bandara", icon: <MapPin className="w-5 h-5" /> },
     { id: "admins" as ActiveMenu, label: "Kelola Admin", icon: <UserCog className="w-5 h-5" /> },

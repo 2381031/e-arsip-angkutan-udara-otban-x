@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  nama      String
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+model JenisArsip {
+  id        String    @id @default(uuid())
+  namaJenis String    @map("nama_jenis") @unique
+  documents Dokumen[]
+
+  @@map("jenis_arsip")
+}
+
+model BandarUdara {
+  id          String    @id @default(uuid())
+  namaBandara String    @map("nama_bandara") @unique
+  documents   Dokumen[]
+
+  @@map("bandar_udara")
+}
+
+model Tahun {
+  id        String    @id @default(uuid())
+  tahun     String    @unique
+  documents Dokumen[]
+
+  @@map("tahun")
+}
+
+model Dokumen {
+  id            String   @id @default(uuid())
+  namaDokumen   String   @map("nama_dokumen")
+  nomorDokumen  String   @map("nomor_dokumen")
+  keterangan    String?
+  jenisArsipId  String   @map("jenis_arsip_id")
+  bandaraId     String   @map("bandara_id")
+  tahunId       String   @map("tahun_id")
+  fileUrl       String   @map("file_url")
+  uploadedBy    String   @map("uploaded_by")
+  tanggalDokumen String?  @map("tanggal_dokumen")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  jenisArsip    JenisArsip  @relation(fields: [jenisArsipId], references: [id])
+  bandara       BandarUdara @relation(fields: [bandaraId], references: [id])
+  tahunRelation Tahun       @relation(fields: [tahunId], references: [id])
+
+  @@map("dokumen")
+}
+
+model LogAktivitas {
+  id            String   @id @default(uuid())
+  adminUsername String   @map("admin_username")
+  aktivitas     String
+  detail        String?
+  tanggal       DateTime @default(now())
+
+  @@map("log_aktivitas")
+}

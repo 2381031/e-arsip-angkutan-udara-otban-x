@@ -1,0 +1,8 @@
+{
+  "name": "Remix: E-Arsip Angkutan Udara OTBAN X",
+  "description": "Sistem e-Arsip Dokumen Angkutan Udara Kantor Otoritas Bandar Udara Wilayah X Merauke",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

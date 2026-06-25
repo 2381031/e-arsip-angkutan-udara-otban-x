@@ -1,54 +1,54 @@
 import "dotenv/config";
 import express from "express";
-import path from "path";
-import fs from "fs";
 import jwt from "jsonwebtoken";
+import path from "path";
 import multer from "multer";
+import { put, del } from "@vercel/blob";
 import { dbService } from "./server/db.js";
 
 const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "otban-x-super-secret-key-2026";
 
-// Ensure upload directory exists
-const UPLOAD_DIR = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
+
 
 // Support JSON and urlencoded request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically
-app.use("/uploads", express.static(UPLOAD_DIR));
-
-// Configure Multer for local uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique name keeping extension
-    const ext = path.extname(file.originalname);
-    const name = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9]/g, "_");
-    cb(null, `${Date.now()}_${name}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedExtensions.includes(ext)) {
-      cb(null, true);
-    } else {
-      cb(new Error("Format file tidak didukung! Hanya PDF, DOC, DOCX, XLS, XLSX."));
-    }
-  },
+    storage: multer.memoryStorage(),
+
+    limits: {
+        fileSize: 10 * 1024 * 1024,
+    },
+
+    fileFilter: (req, file, cb) => {
+
+        const allowed = [
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx"
+        ];
+
+        const ext = file.originalname
+            .substring(file.originalname.lastIndexOf("."))
+            .toLowerCase();
+
+        if (allowed.includes(ext)) {
+            cb(null, true);
+        } else {
+            cb(
+                new Error(
+                    "Format file tidak didukung."
+                )
+            );
+        }
+    },
 });
+
 
 // Authentication Middleware
 function authenticateToken(req: any, res: any, next: any) {
@@ -420,8 +420,15 @@ app.post("/api/dokumen", authenticateToken, upload.single("file"), async (req: a
       finalTahunId = newTahunObj.id;
     }
 
-    // Set relative url path
-    const fileUrl = `/uploads/${req.file.filename}`;
+const blob = await put(
+    `${Date.now()}-${req.file.originalname}`,
+    req.file.buffer,
+    {
+        access: "public",
+    }
+);
+
+const fileUrl = blob.url;
 
     const newDoc = await dbService.addDokumen({
       nama_dokumen,
@@ -510,17 +517,11 @@ app.delete("/api/dokumen/:id", authenticateToken, async (req: any, res) => {
     return res.status(404).json({ message: "Dokumen tidak ditemukan." });
   }
 
-  // Delete physical file from storage if it is in uploads
-  if (doc.file_url.startsWith("/uploads/")) {
-    const filePath = path.join(process.cwd(), doc.file_url);
-    if (fs.existsSync(filePath)) {
-      try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error("Failed to delete physical file", err);
-      }
-    }
-  }
+try {
+    await del(doc.file_url);
+} catch (err) {
+    console.error(err);
+}
 
   await dbService.deleteDokumen(id);
   await dbService.addLog(
@@ -623,6 +624,7 @@ app.get("/api/logs", authenticateToken, async (req, res) => {
 // VITE OR STATIC FRONTEND MIDDLEWARE & START
 // ==========================================
 async function start() {
+  const distPath = path.join(process.cwd(), "dist");
   if (process.env.NODE_ENV !== "production") {
     const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
@@ -631,7 +633,7 @@ async function start() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));

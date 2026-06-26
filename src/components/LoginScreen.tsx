@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Lock, User, Eye, EyeOff, LogIn, Sun, Moon } from "lucide-react";
 import { OtbanLogo } from "./OtbanLogo.js";
+import { APP_SUBTITLE, APP_TITLE } from "../constants/branding.js";
 
 interface LoginScreenProps {
   onLoginSuccess: (token: string, user: any) => void;
@@ -66,7 +67,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         localStorage.removeItem("remembered_username");
       }
 
-      addToast("Berhasil login! Selamat datang di E-Arsip OTBAN X.", "success");
+      addToast(`Berhasil login! Selamat datang di ${APP_TITLE}.`, "success");
       onLoginSuccess(data.token, data.user);
     } catch (err: any) {
       addToast(err.message || "Koneksi ke server gagal", "error");
@@ -98,10 +99,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* Title */}
         <div className="text-center mb-8">
           <h2 className="font-display font-extrabold text-2xl tracking-tight text-emerald-700 dark:text-emerald-400">
-            E-ARSIP ANGKUTAN UDARA
+            {APP_TITLE}
           </h2>
-          <p className="text-xs font-semibold tracking-wider text-slate-500 dark:text-slate-400 mt-1 uppercase">
-            OTORITAS BANDAR UDARA WILAYAH X MERAUKE
+          <p className="text-xs font-semibold tracking-wider text-slate-500 dark:text-slate-400 mt-1 uppercase leading-relaxed">
+            {APP_SUBTITLE}
           </p>
         </div>
 

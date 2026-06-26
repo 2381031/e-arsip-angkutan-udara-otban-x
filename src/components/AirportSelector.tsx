@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plane, Calendar, ChevronRight, Folder, MapPin, ArrowLeft, Plus, X, Upload } from "lucide-react";
 import { BandarUdara, Tahun, ActiveMenu, JenisArsip } from "../types.js";
+import { findCategoryForMenu } from "../utils/archiveCategories.js";
 
 interface AirportSelectorProps {
   token: string;
@@ -86,7 +87,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
     setFormTanggal(new Date().toISOString().split("T")[0]);
 
     // Auto-populate Category matching selected tab
-    const catObj = categories.find(c => c.nama_jenis.toLowerCase().replace(" ", "_") === activeCategory);
+    const catObj = findCategoryForMenu(categories, activeCategory);
     setFormKategoriId(catObj ? catObj.id : categories[0]?.id || "");
 
     setIsUploadModalOpen(true);

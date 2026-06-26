@@ -15,7 +15,10 @@ async function main() {
 
   const jenisArsip = [
     "Pengawasan",
+    "Peraturan",
     "Rapat",
+    "Surat",
+    "Nota dinas",
     "PPRP",
     "Lalu Lintas",
     "Rekonsiliasi",

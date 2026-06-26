@@ -63,8 +63,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         return "Dashboard";
       case "pengawasan":
         return "Pengawasan Dokumen";
+      case "peraturan":
+        return "Arsip Peraturan";
       case "rapat":
         return "Notulen Rapat";
+      case "surat":
+        return "Arsip Surat";
+      case "nota_dinas":
+        return "Nota Dinas";
       case "pprp":
         return "Program PPRP";
       case "lalu_lintas":
@@ -78,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case "logs":
         return "Log Aktivitas Admin";
       default:
-        return "E-Arsip";
+        return "SIGAP-UD";
     }
   };
 

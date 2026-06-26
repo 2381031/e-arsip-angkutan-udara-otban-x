@@ -9,6 +9,7 @@ import { AirportManager } from "./components/AirportManager.js";
 import { ActivityLogs } from "./components/ActivityLogs.js";
 import { ToastContainer, ToastMessage, ToastType } from "./components/Toast.js";
 import { ActiveMenu, Tahun, Dokumen } from "./types.js";
+import { categoryNameToMenu } from "./utils/archiveCategories.js";
 
 export default function App() {
   // Authentication & Session management
@@ -148,15 +149,7 @@ export default function App() {
     addToast(`Membuka berkas: "${doc.nama_dokumen}"`, "info");
     
     // Auto translate menu tab
-    const catMenuMap: Record<string, ActiveMenu> = {
-      "pengawasan": "pengawasan",
-      "rapat": "rapat",
-      "pprp": "pprp",
-      "lalu lintas": "lalu_lintas",
-      "rekonsiliasi": "rekonsiliasi"
-    };
-    
-    const matchedMenu = catMenuMap[doc.nama_kategori?.toLowerCase() || ""] || "pengawasan";
+    const matchedMenu = categoryNameToMenu(doc.nama_kategori || "");
     setActiveMenu(matchedMenu);
     
     setSelectedYear({ id: doc.tahun_id, tahun: doc.tahun || "" });
@@ -184,6 +177,8 @@ export default function App() {
       case "peraturan":
       case "pengawasan":
       case "rapat":
+      case "surat":
+      case "nota_dinas":
       case "pprp":
       case "lalu_lintas":
       case "rekonsiliasi":

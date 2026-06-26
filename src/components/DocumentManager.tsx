@@ -27,6 +27,7 @@ import {
   isPdfFile,
   logDocumentDownload,
 } from "../utils/documentFile.js";
+import { findCategoryForMenu } from "../utils/archiveCategories.js";
 
 interface DocumentManagerProps {
   token: string;
@@ -101,9 +102,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   const fetchYearCounts = async () => {
     if (categories.length === 0) return;
     try {
-      const activeCatObj = categories.find(
-        c => c.nama_jenis.toLowerCase().replace(" ", "_") === activeCategory
-      );
+      const activeCatObj = findCategoryForMenu(categories, activeCategory);
       if (!activeCatObj) return;
 
       const res = await fetch(`/api/dokumen?limit=100000&jenis_arsip_id=${activeCatObj.id}`, {
@@ -132,9 +131,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       query += `&tahun_id=${selectedYear.id}`;
       
       // Scoped by category
-      const activeCatObj = categories.find(
-        c => c.nama_jenis.toLowerCase().replace(" ", "_") === activeCategory
-      );
+      const activeCatObj = findCategoryForMenu(categories, activeCategory);
       if (activeCatObj) {
         query += `&jenis_arsip_id=${activeCatObj.id}`;
       }
@@ -259,7 +256,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     setFormFile(null);
 
     // Auto-populate Category matching selected tab
-    const catObj = categories.find(c => c.nama_jenis.toLowerCase().replace(" ", "_") === activeCategory);
+    const catObj = findCategoryForMenu(categories, activeCategory);
     setFormKategoriId(catObj ? catObj.id : categories[0]?.id || "");
 
     // Default to first airport and selected year date or today's date

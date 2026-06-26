@@ -63,6 +63,8 @@ export type ActiveMenu =
   | "pengawasan"
   | "peraturan"
   | "rapat"
+  | "surat"
+  | "nota_dinas"
   | "pprp"
   | "lalu_lintas"
   | "rekonsiliasi"

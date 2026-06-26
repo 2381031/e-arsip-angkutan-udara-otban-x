@@ -76,7 +76,10 @@ ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO jenis_arsip (nama_jenis) VALUES 
 ('Pengawasan'),
+('Peraturan'),
 ('Rapat'),
+('Surat'),
+('Nota dinas'),
 ('PPRP'),
 ('Lalu Lintas'),
 ('Rekonsiliasi')

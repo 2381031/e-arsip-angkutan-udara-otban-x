@@ -9,25 +9,21 @@
       }
     },
     {
-      "src": "dist/server.cjs",
+      "src": "server.ts",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/dist/server.cjs"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/dist/assets/$1"
+      "dest": "server.ts"
     },
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "dest": "/index.html"
     }
   ]
 }

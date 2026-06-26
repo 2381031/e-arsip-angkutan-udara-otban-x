@@ -527,15 +527,15 @@ if (doc.file_url?.includes("blob.vercel-storage.com")) {
     }
 }
 
-await dbService.deleteDokumen(id);
-
- if (doc.file_url?.includes("blob.vercel-storage.com")) {
+if (doc.file_url?.includes("blob.vercel-storage.com")) {
     try {
         await del(doc.file_url);
     } catch (err) {
-        console.error("Gagal menghapus Blob:", err);
+        console.error(err);
     }
 }
+
+await dbService.deleteDokumen(id);
 
   await dbService.deleteDokumen(id);
   await dbService.addLog(
@@ -648,7 +648,6 @@ async function start() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static(distPath));
-    app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
@@ -662,6 +661,8 @@ async function start() {
   }
 }
 
-start();
+if (!process.env.VERCEL) {
+  start();
+}
 
 export default app;

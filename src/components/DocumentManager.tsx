@@ -20,6 +20,13 @@ import {
   Folder
 } from "lucide-react";
 import { BandarUdara, Tahun, ActiveMenu, Dokumen, JenisArsip } from "../types.js";
+import {
+  downloadDocument,
+  fetchDocumentBlob,
+  getFileExtension,
+  isPdfFile,
+  logDocumentDownload,
+} from "../utils/documentFile.js";
 
 interface DocumentManagerProps {
   token: string;
@@ -58,6 +65,8 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewBlobUrl, setPreviewBlobUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // Selected document state for action modals
   const [selectedDoc, setSelectedDoc] = useState<Dokumen | null>(null);
@@ -182,6 +191,65 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       updateBreadcrumb([categoryTitle]);
     }
   }, [activeCategory, selectedYear]);
+
+  useEffect(() => {
+    if (!isPreviewModalOpen || !selectedDoc) {
+      setPreviewBlobUrl(null);
+      setPreviewLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    const loadPreview = async () => {
+      setPreviewLoading(true);
+      setPreviewBlobUrl(null);
+
+      try {
+        const blob = await fetchDocumentBlob(token, selectedDoc.id);
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setPreviewBlobUrl(objectUrl);
+      } catch (err: any) {
+        if (!cancelled) {
+          addToast(err.message || "Gagal memuat pratinjau dokumen", "error");
+        }
+      } finally {
+        if (!cancelled) {
+          setPreviewLoading(false);
+        }
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [isPreviewModalOpen, selectedDoc?.id, token]);
+
+  const handleDownloadDocument = async (doc: Dokumen) => {
+    try {
+      await downloadDocument(token, doc);
+      await logDocumentDownload(token, doc.id);
+      addToast(`Berhasil mengunduh "${doc.nama_dokumen}"`, "success");
+    } catch (err: any) {
+      addToast(err.message || "Gagal mengunduh dokumen", "error");
+    }
+  };
+
+  const closePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    if (previewBlobUrl) {
+      URL.revokeObjectURL(previewBlobUrl);
+    }
+    setPreviewBlobUrl(null);
+    setPreviewLoading(false);
+  };
 
   // Pre-populate Form for Upload matching the active scope
   const openUploadModal = () => {
@@ -340,10 +408,10 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   };
 
   const getFileIcon = (url: string) => {
-    const ext = url.split(".").pop()?.toLowerCase();
+    const ext = getFileExtension(url);
     if (ext === "pdf") {
       return <FileText className="w-5 h-5 text-rose-500" />;
-    } else if (["xls", "xlsx"].includes(ext || "")) {
+    } else if (["xls", "xlsx"].includes(ext)) {
       return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
     } else {
       return <FileIcon className="w-5 h-5 text-blue-500" />;
@@ -567,22 +635,13 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                                 <Eye className="w-4 h-4" />
                               </button>
                               
-                              <a
-                                href={doc.file_url}
-                                download
-                                onClick={async () => {
-                                  await fetch(`/api/dokumen/${doc.id}/download-log`, {
-                                    method: "POST",
-                                    headers: { Authorization: `Bearer ${token}` },
-                                  });
-                                }}
+                              <button
+                                onClick={() => handleDownloadDocument(doc)}
                                 className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-lg transition inline-flex items-center justify-center"
                                 title="Unduh Berkas"
-                                target="_blank"
-                                rel="noreferrer"
                               >
                                 <Download className="w-4 h-4" />
-                              </a>
+                              </button>
 
                               <button
                                 onClick={() => openEditModal(doc)}
@@ -976,7 +1035,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
         <div className="fixed inset-0 bg-slate-950/60 flex items-center justify-center p-4 z-50 animate-fade-in backdrop-blur-xs">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl p-6 relative max-h-[90vh] flex flex-col">
             <button
-              onClick={() => setIsPreviewModalOpen(false)}
+              onClick={closePreviewModal}
               className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
@@ -1031,13 +1090,23 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 </div>
               )}
 
-              {selectedDoc.file_url.toLowerCase().endsWith(".pdf") ? (
-                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden h-96 shadow-sm">
-                  <iframe
-                    src={selectedDoc.file_url}
-                    className="w-full h-full border-none"
-                    title={selectedDoc.nama_dokumen}
-                  ></iframe>
+              {isPdfFile(selectedDoc.file_url) ? (
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden h-96 shadow-sm bg-slate-100 dark:bg-slate-950/40">
+                  {previewLoading ? (
+                    <div className="h-full flex items-center justify-center">
+                      <span className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>
+                    </div>
+                  ) : previewBlobUrl ? (
+                    <iframe
+                      src={previewBlobUrl}
+                      className="w-full h-full border-none"
+                      title={selectedDoc.nama_dokumen}
+                    ></iframe>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-sm text-slate-500 dark:text-slate-400 px-6 text-center">
+                      Pratinjau PDF tidak dapat dimuat. Silakan unduh file terlebih dahulu.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-8 text-center bg-slate-50 dark:bg-slate-950/20 flex flex-col items-center">
@@ -1048,27 +1117,20 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                   <p className="text-xs text-slate-400 mt-1 font-medium max-w-sm">
                     Dokumen berekstensi non-PDF (Word/Excel) harus diunduh terlebih dahulu untuk meninjau seluruh konten.
                   </p>
-                  <a
-                    href={selectedDoc.file_url}
-                    download
-                    onClick={async () => {
-                      await fetch(`/api/dokumen/${selectedDoc!.id}/download-log`, {
-                        method: "POST",
-                        headers: { Authorization: `Bearer ${token}` },
-                      });
-                    }}
+                  <button
+                    onClick={() => handleDownloadDocument(selectedDoc)}
                     className="mt-4 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md shadow-emerald-600/10 transition cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download File Sekarang</span>
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5 mt-4">
               <button
-                onClick={() => setIsPreviewModalOpen(false)}
+                onClick={closePreviewModal}
                 className="px-4.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs cursor-pointer"
               >
                 Tutup Pratinjau

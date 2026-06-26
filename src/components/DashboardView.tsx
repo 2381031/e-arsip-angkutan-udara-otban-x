@@ -25,6 +25,11 @@ import {
   Legend
 } from "recharts";
 import { DashboardMetrics, Dokumen } from "../types.js";
+import {
+  downloadDocument,
+  getFileExtension,
+  logDocumentDownload,
+} from "../utils/documentFile.js";
 
 interface DashboardViewProps {
   token: string;
@@ -65,13 +70,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ec4899", "#8b5cf6", "#6366f1"];
 
   const getFileIcon = (url: string) => {
-    const ext = url.split(".").pop()?.toLowerCase();
+    const ext = getFileExtension(url);
     if (ext === "pdf") {
       return <FileText className="w-5 h-5 text-rose-500" />;
-    } else if (["xls", "xlsx"].includes(ext || "")) {
+    } else if (["xls", "xlsx"].includes(ext)) {
       return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
     } else {
       return <FileIcon className="w-5 h-5 text-blue-500" />;
+    }
+  };
+
+  const handleDownloadDocument = async (doc: Dokumen) => {
+    try {
+      await downloadDocument(token, doc);
+      await logDocumentDownload(token, doc.id);
+      addToast(`Berhasil mengunduh "${doc.nama_dokumen}"`, "success");
+    } catch (err: any) {
+      addToast(err.message || "Gagal mengunduh dokumen", "error");
     }
   };
 
@@ -330,23 +345,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <a
-                          href={doc.file_url}
-                          download
-                          onClick={async () => {
-                            // Log download trigger
-                            await fetch(`/api/dokumen/${doc.id}/download-log`, {
-                              method: "POST",
-                              headers: { Authorization: `Bearer ${token}` },
-                            });
-                          }}
+                        <button
+                          onClick={() => handleDownloadDocument(doc)}
                           className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-lg transition inline-flex items-center justify-center"
                           title="Unduh File"
-                          target="_blank"
-                          rel="noreferrer"
                         >
                           <Download className="w-4 h-4" />
-                        </a>
+                        </button>
                       </div>
                     </td>
                   </tr>

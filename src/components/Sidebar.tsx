@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   LayoutDashboard,
   FolderArchive,
@@ -12,7 +12,8 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  ChevronDown
 } from "lucide-react";
 import { OtbanLogo } from "./OtbanLogo.js";
 import { ActiveMenu } from "../types.js";
@@ -59,6 +60,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: "logs" as ActiveMenu, label: "Log Aktivitas", icon: <Activity className="w-5 h-5" /> },
   ];
 
+  const [openPengawasan, setOpenPengawasan] = useState(true);
+  const [openPengendalian, setOpenPengendalian] = useState(true);
+
   return (
     <>
       {/* Mobile Sidebar Backdrop Overlay */}
@@ -85,10 +89,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!collapsed && (
           <div className="text-center mt-3 px-4">
             <h1 className="font-display font-extrabold text-sm tracking-wide text-emerald-700 dark:text-emerald-400">
-              E-ARSIP ANGUD 
+              SIGAP-UD 
             </h1>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5 tracking-wider uppercase">
-              OTBAN X - MERAUKE
+              ANGUD - OTBAN X MERAUKE
             </p>
           </div>
         )}
@@ -114,30 +118,165 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </p>
           )}
           <nav className="space-y-1">
-            {mainMenu.map((item) => {
-              const isActive = activeMenu === item.id;
-              return (
+            {/* Dashboard */}
+            <button
+              id="sidebar-menu-dashboard"
+              onClick={() => {
+                onMenuChange("dashboard");
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
+                activeMenu === "dashboard"
+                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
+              }`}
+              title={collapsed ? "Dashboard" : ""}
+            >
+              <span className={activeMenu === "dashboard" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                <LayoutDashboard className="w-5 h-5" />
+              </span>
+              {!collapsed && <span>Dashboard</span>}
+            </button>
+
+            {/* Pengawasan Group */}
+            {!collapsed && (
+              <>
                 <button
-                  key={item.id}
-                  id={`sidebar-menu-${item.id}`}
-                  onClick={() => {
-                    onMenuChange(item.id);
-                    if (onCloseMobile) onCloseMobile();
-                  }}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
-                  }`}
-                  title={collapsed ? item.label : ""}
+                  onClick={() => setOpenPengawasan(!openPengawasan)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-semibold text-sm transition-all cursor-pointer border border-transparent hover:text-slate-900 dark:hover:text-slate-100"
                 >
-                  <span className={isActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
-                    {item.icon}
-                  </span>
-                  {!collapsed && <span>{item.label}</span>}
+                  <div className="flex items-center gap-3.5">
+                    <ShieldCheck className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                    <span>Pengawasan</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${openPengawasan ? 'rotate-180' : ''}`} />
                 </button>
-              );
-            })}
+
+                {openPengawasan && (
+                  <div className="pl-6 space-y-1 mt-1">
+                    {/* Pengawasan */}
+                    <button
+                      id="sidebar-menu-pengawasan"
+                      onClick={() => {
+                        onMenuChange("pengawasan");
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
+                        activeMenu === "pengawasan"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      Pengawasan
+                    </button>
+
+                    {/* PPRP */}
+                    <button
+                      id="sidebar-menu-pprp"
+                      onClick={() => {
+                        onMenuChange("pprp");
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
+                        activeMenu === "pprp"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      PPRP
+                    </button>
+
+                    {/* Lalu Lintas */}
+                    <button
+                      id="sidebar-menu-lalu_lintas"
+                      onClick={() => {
+                        onMenuChange("lalu_lintas");
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
+                        activeMenu === "lalu_lintas"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      Lalu Lintas
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Pengendalian Group */}
+            {!collapsed && (
+              <>
+                <button
+                  onClick={() => setOpenPengendalian(!openPengendalian)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-semibold text-sm transition-all cursor-pointer border border-transparent hover:text-slate-900 dark:hover:text-slate-100"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <Scale className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                    <span>Pengendalian</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${openPengendalian ? 'rotate-180' : ''}`} />
+                </button>
+
+                {openPengendalian && (
+                  <div className="pl-6 space-y-1 mt-1">
+                    {/* Rekonsiliasi */}
+                    <button
+                      id="sidebar-menu-rekonsiliasi"
+                      onClick={() => {
+                        onMenuChange("rekonsiliasi");
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
+                        activeMenu === "rekonsiliasi"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      Rekonsiliasi
+                    </button>
+
+                    {/* Peraturan */}
+                    <button
+                      id="sidebar-menu-peraturan"
+                      onClick={() => {
+                        onMenuChange("peraturan");
+                        if (onCloseMobile) onCloseMobile();
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
+                        activeMenu === "peraturan"
+                          ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+                      }`}
+                    >
+                      Peraturan
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Rapat */}
+            <button
+              id="sidebar-menu-rapat"
+              onClick={() => {
+                onMenuChange("rapat");
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
+                activeMenu === "rapat"
+                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
+              }`}
+              title={collapsed ? "Rapat" : ""}
+            >
+              <span className={activeMenu === "rapat" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                <Users className="w-5 h-5" />
+              </span>
+              {!collapsed && <span>Rapat</span>}
+            </button>
           </nav>
         </div>
 

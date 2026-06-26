@@ -46,6 +46,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         body: JSON.stringify({ username, password }),
       });
 
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(
+          "API server tidak tersedia. Pastikan vercel.json sudah benar dan environment variables DATABASE_URL serta JWT_SECRET sudah diatur di Vercel."
+        );
+      }
+
       const data = await response.json();
 
       if (!response.ok) {

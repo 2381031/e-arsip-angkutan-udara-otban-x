@@ -71,7 +71,7 @@ EXECUTE FUNCTION update_updated_at_column();
 
 -- Seed initial data
 INSERT INTO admins (id, nama, username, password)
-VALUES (uuid_generate_v4(), 'Admin OTBAN X', 'angud2026', '$2b$10$U.wD88H7Q1Xy0e12vV76vOXx7iF1tWn91MreGz4X4vU9i8rAenQW6') -- password: otban10
+VALUES (uuid_generate_v4(), 'Admin OTBAN X', 'angud2026', 'otban10')
 ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO jenis_arsip (nama_jenis) VALUES 

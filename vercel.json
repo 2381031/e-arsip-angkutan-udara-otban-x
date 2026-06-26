@@ -1,18 +1,9 @@
 {
   "version": 2,
-  "functions": {
-    "server.ts": {
-      "runtime": "@vercel/node"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "/server.ts"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/dist/assets/$1"
     },
     {
       "handle": "filesystem"

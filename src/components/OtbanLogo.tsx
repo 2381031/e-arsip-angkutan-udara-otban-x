@@ -12,7 +12,9 @@ interface LogoProps {
 // - Jika Anda menggunakan file lokal, letakkan di folder 'uploads/' dan isi dengan '/uploads/nama_file.png'
 // - Atau Anda bisa menggunakan URL eksternal langsung (misal: 'https://example.com/logo.png')
 // Jika gambar tidak ditemukan atau gagal dimuat, aplikasi akan otomatis memunculkan logo SVG OTBAN default yang sangat elegan.
-const CUSTOM_LOGO_URL = "/assets/logo.jpeg"; 
+// Logo OTBAN X — satu foto yang sama untuk mode terang & gelap.
+// File disimpan di public/logo.jpeg agar tidak bentrok dengan folder /assets/ hasil build Vite.
+const CUSTOM_LOGO_URL = "/logo.jpeg";
 
 export const OtbanLogo: React.FC<LogoProps> = ({ className = "w-16 h-16", showText = false }) => {
   const [imageError, setImageError] = useState(false);
@@ -20,13 +22,15 @@ export const OtbanLogo: React.FC<LogoProps> = ({ className = "w-16 h-16", showTe
   return (
     <div className="flex flex-col items-center justify-center">
       {!imageError && CUSTOM_LOGO_URL ? (
-        <img
-          src={CUSTOM_LOGO_URL}
-          alt="Logo OTBAN X"
-          className={`${className} object-contain transition-all duration-300`}
-          onError={() => setImageError(true)}
-          referrerPolicy="no-referrer"
-        />
+        <div className="rounded-2xl bg-white p-1.5 shadow-md ring-1 ring-slate-200/80 dark:bg-white dark:ring-slate-700/50">
+          <img
+            src={CUSTOM_LOGO_URL}
+            alt="Logo OTBAN X"
+            className={`${className} object-contain`}
+            onError={() => setImageError(true)}
+            referrerPolicy="no-referrer"
+          />
+        </div>
       ) : (
         // Elegant Default Vector SVG Logo
         <svg

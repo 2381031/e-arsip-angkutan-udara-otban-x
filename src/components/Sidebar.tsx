@@ -53,6 +53,8 @@ const standaloneMenuItems: MenuItem[] = [
 ];
 
 const pengawasanSubItems: MenuItem[] = [
+  { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: <Compass className="w-4 h-4" /> },
+  { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: <Compass className="w-4 h-4" /> },
   { id: "lalu_lintas", label: "Lalu Lintas Angkutan Udara", icon: <Plane className="w-4 h-4" /> },
   { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-4 h-4" /> },
   { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-4 h-4" /> },
@@ -60,11 +62,6 @@ const pengawasanSubItems: MenuItem[] = [
   { id: "perintis", label: "Perintis", icon: <Navigation className="w-4 h-4" /> },
   { id: "delay_management", label: "Delay Management", icon: <Clock className="w-4 h-4" /> },
   { id: "haji", label: "Haji", icon: <Building2 className="w-4 h-4" /> },
-];
-
-const pprpSubItems: MenuItem[] = [
-  { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: null },
-  { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: null },
 ];
 
 const pengendalianSubItems: MenuItem[] = [
@@ -89,7 +86,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const [openPengawasan, setOpenPengawasan] = useState(true);
-  const [openPPRP, setOpenPPRP] = useState(true);
   const [openPengendalian, setOpenPengendalian] = useState(true);
 
   const handleMenuClick = (menu: ActiveMenu) => {
@@ -113,13 +109,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
     }`;
 
-  const nestedItemClass = (active: boolean) =>
-    `w-full flex items-center gap-2 pl-8 pr-3 py-1 rounded-md text-xs transition-all cursor-pointer ${
-      active
-        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium"
-        : "text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300 font-medium"
-    }`;
-
   const collapseBtnClass = (open: boolean) =>
     `w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
       open
@@ -127,14 +116,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
     } border border-transparent hover:border-slate-200 dark:hover:border-slate-700`;
 
-  const renderSubItems = (items: MenuItem[], level: "sub" | "nested") => {
-    const cls = level === "sub" ? subItemClass : nestedItemClass;
+  const renderSubItems = (items: MenuItem[]) => {
     return items.map((item) => (
       <button
         key={item.id}
         id={`sidebar-menu-${item.id}`}
         onClick={() => handleMenuClick(item.id)}
-        className={cls(isActive(item.id))}
+        className={subItemClass(isActive(item.id))}
       >
         {item.icon && <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>{item.icon}</span>}
         <span>{item.label}</span>
@@ -234,29 +222,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {openPengawasan && (
                     <div className="space-y-0.5 mt-0.5">
-                      {/* PPRP nested */}
-                      <button
-                        onClick={() => setOpenPPRP(!openPPRP)}
-                        className={`w-full flex items-center justify-between gap-2 pl-6 pr-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
-                          openPPRP
-                            ? "text-slate-800 dark:text-slate-200"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Compass className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                          <span>PPRP</span>
-                        </div>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openPPRP ? "rotate-180" : ""}`} />
-                      </button>
-
-                      {openPPRP && (
-                        <div className="space-y-0.5">
-                          {renderSubItems(pprpSubItems, "nested")}
-                        </div>
-                      )}
-
-                      {renderSubItems(pengawasanSubItems, "sub")}
+                      {renderSubItems(pengawasanSubItems)}
                     </div>
                   )}
 
@@ -289,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {openPengendalian && (
                     <div className="space-y-0.5 mt-0.5">
-                      {renderSubItems(pengendalianSubItems, "sub")}
+                      {renderSubItems(pengendalianSubItems)}
                     </div>
                   )}
                 </>

@@ -18,10 +18,12 @@ export default defineConfig(() => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'recharts': ['recharts'],
-            'lucide': ['lucide-react'],
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'recharts';
+              if (id.includes('lucide')) return 'lucide';
+              return 'vendor';
+            }
           },
         },
       },

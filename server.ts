@@ -16,6 +16,14 @@ process.on("unhandledRejection", (err: any) => {
   console.error("[UNHANDLED REJECTION]", err?.message || err);
 });
 
+// Global error handler - ensures ALL API routes return JSON, never HTML
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error("[GLOBAL ERROR]", err?.message || err);
+  if (!res.headersSent) {
+    res.status(500).json({ message: err?.message || "Terjadi kesalahan pada server." });
+  }
+});
+
 
 
 // Support JSON and urlencoded request bodies
@@ -248,7 +256,12 @@ app.delete("/api/admins/:id", authenticateToken, async (req: any, res) => {
 
 // 3. BANDAR UDARA (Airports)
 app.get("/api/bandara", authenticateToken, async (req, res) => {
-  res.json(await dbService.getBandarUdara());
+  try {
+    res.json(await dbService.getBandarUdara());
+  } catch (error: any) {
+    console.error("Bandara list error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat bandara." });
+  }
 });
 
 app.post("/api/bandara", authenticateToken, async (req: any, res) => {
@@ -314,7 +327,12 @@ app.delete("/api/bandara/:id", authenticateToken, async (req: any, res) => {
 
 // 4. TAHUN
 app.get("/api/tahun", authenticateToken, async (req, res) => {
-  res.json(await dbService.getTahun());
+  try {
+    res.json(await dbService.getTahun());
+  } catch (error: any) {
+    console.error("Tahun list error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat tahun." });
+  }
 });
 
 app.post("/api/tahun", authenticateToken, async (req: any, res) => {
@@ -336,52 +354,62 @@ app.post("/api/tahun", authenticateToken, async (req: any, res) => {
 
 // 5. JENIS ARSIP (CATEGORIES)
 app.get("/api/jenis-arsip", authenticateToken, async (req, res) => {
-  res.json(await dbService.getJenisArsip());
+  try {
+    res.json(await dbService.getJenisArsip());
+  } catch (error: any) {
+    console.error("Jenis arsip list error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat kategori." });
+  }
 });
 
 // 6. DOKUMEN (GET with filtering, search, pagination - optimized DB query)
 app.get("/api/dokumen", authenticateToken, async (req, res) => {
-  const { search, jenis_arsip_id, bandara_id, tahun_id, page, limit } = req.query;
+  try {
+    const { search, jenis_arsip_id, bandara_id, tahun_id, page, limit } = req.query;
 
-  const pageNum = parseInt(String(page || "1"), 10);
-  const limitNum = parseInt(String(limit || "10"), 10);
+    const pageNum = parseInt(String(page || "1"), 10);
+    const limitNum = parseInt(String(limit || "10"), 10);
 
-  const result = await dbService.getDokumenFiltered({
-    search: search ? String(search) : undefined,
-    jenis_arsip_id: jenis_arsip_id ? String(jenis_arsip_id) : undefined,
-    bandara_id: bandara_id ? String(bandara_id) : undefined,
-    tahun_id: tahun_id ? String(tahun_id) : undefined,
-    page: pageNum,
-    limit: limitNum,
-  });
-
-  // Join reference data (small tables: airports, years, categories)
-  const [airports, years, categories] = await Promise.all([
-    dbService.getBandarUdara(),
-    dbService.getTahun(),
-    dbService.getJenisArsip(),
-  ]);
-
-  const airportMap = new Map(airports.map(b => [b.id, b.nama_bandara]));
-  const yearMap = new Map(years.map(y => [y.id, y.tahun]));
-  const catMap = new Map(categories.map(c => [c.id, c.nama_jenis]));
-
-  const joinedList = result.data.map(doc => ({
-    ...doc,
-    nama_bandara: airportMap.get(doc.bandara_id) || "Unknown Airport",
-    tahun: yearMap.get(doc.tahun_id) || "Unknown Year",
-    nama_kategori: catMap.get(doc.jenis_arsip_id) || "Unknown Category",
-  }));
-
-  res.json({
-    data: joinedList,
-    pagination: {
-      total: result.total,
+    const result = await dbService.getDokumenFiltered({
+      search: search ? String(search) : undefined,
+      jenis_arsip_id: jenis_arsip_id ? String(jenis_arsip_id) : undefined,
+      bandara_id: bandara_id ? String(bandara_id) : undefined,
+      tahun_id: tahun_id ? String(tahun_id) : undefined,
       page: pageNum,
       limit: limitNum,
-      totalPages: result.totalPages,
-    },
-  });
+    });
+
+    // Join reference data (small tables: airports, years, categories)
+    const [airports, years, categories] = await Promise.all([
+      dbService.getBandarUdara(),
+      dbService.getTahun(),
+      dbService.getJenisArsip(),
+    ]);
+
+    const airportMap = new Map(airports.map(b => [b.id, b.nama_bandara]));
+    const yearMap = new Map(years.map(y => [y.id, y.tahun]));
+    const catMap = new Map(categories.map(c => [c.id, c.nama_jenis]));
+
+    const joinedList = result.data.map(doc => ({
+      ...doc,
+      nama_bandara: airportMap.get(doc.bandara_id) || "Unknown Airport",
+      tahun: yearMap.get(doc.tahun_id) || "Unknown Year",
+      nama_kategori: catMap.get(doc.jenis_arsip_id) || "Unknown Category",
+    }));
+
+    res.json({
+      data: joinedList,
+      pagination: {
+        total: result.total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: result.totalPages,
+      },
+    });
+  } catch (error: any) {
+    console.error("Dokumen list error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat daftar dokumen." });
+  }
 });
 
 // Document Upload endpoint
@@ -449,6 +477,18 @@ const fileUrl = blob.url;
     res.status(201).json(newDoc);
   } catch (error: any) {
     res.status(500).json({ message: error.message || "Gagal mengunggah dokumen." });
+  }
+});
+
+// 7b. YEAR COUNTS (must be BEFORE :id routes to avoid route collision)
+app.get("/api/dokumen/year-counts", authenticateToken, async (req, res) => {
+  try {
+    const { jenis_arsip_id } = req.query;
+    const counts = await dbService.getYearCountsByCategory(jenis_arsip_id as string | undefined);
+    res.json(counts);
+  } catch (error: any) {
+    console.error("Year counts error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat jumlah dokumen per tahun." });
   }
 });
 
@@ -643,18 +683,6 @@ app.get("/api/dashboard/metrics", authenticateToken, async (req, res) => {
   } catch (error: any) {
     console.error("Dashboard metrics error:", error);
     res.status(500).json({ message: error.message || "Gagal memuat metrik dashboard." });
-  }
-});
-
-// 7b. YEAR COUNTS (optimized - uses GROUP BY instead of fetching all docs)
-app.get("/api/dokumen/year-counts", authenticateToken, async (req, res) => {
-  try {
-    const { jenis_arsip_id } = req.query;
-    const counts = await dbService.getYearCountsByCategory(jenis_arsip_id as string | undefined);
-    res.json(counts);
-  } catch (error: any) {
-    console.error("Year counts error:", error);
-    res.status(500).json({ message: error.message || "Gagal memuat jumlah dokumen per tahun." });
   }
 });
 

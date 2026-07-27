@@ -1,15 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback, memo } from "react";
 import { Sidebar } from "./components/Sidebar.js";
 import { Navbar } from "./components/Navbar.js";
 import { LoginScreen } from "./components/LoginScreen.js";
-import { DashboardView } from "./components/DashboardView.js";
-import { DocumentManager } from "./components/DocumentManager.js";
-import { AdminManager } from "./components/AdminManager.js";
-import { AirportManager } from "./components/AirportManager.js";
-import { ActivityLogs } from "./components/ActivityLogs.js";
 import { ToastContainer, ToastMessage, ToastType } from "./components/Toast.js";
 import { ActiveMenu, Tahun, Dokumen } from "./types.js";
 import { categoryNameToMenu } from "./utils/archiveCategories.js";
+
+const DashboardView = lazy(() => import("./components/DashboardView.js").then(m => ({ default: m.DashboardView })));
+const DocumentManager = lazy(() => import("./components/DocumentManager.js").then(m => ({ default: m.DocumentManager })));
+const AdminManager = lazy(() => import("./components/AdminManager.js").then(m => ({ default: m.AdminManager })));
+const AirportManager = lazy(() => import("./components/AirportManager.js").then(m => ({ default: m.AirportManager })));
+const ActivityLogs = lazy(() => import("./components/ActivityLogs.js").then(m => ({ default: m.ActivityLogs })));
+
+function ViewSpinner() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <span className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></span>
+      <span className="mt-3 text-xs font-semibold text-slate-400 font-mono">Memuat halaman...</span>
+    </div>
+  );
+}
 
 export default function App() {
   // Authentication & Session management
@@ -277,7 +287,9 @@ export default function App() {
         />
 
         <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto pb-16">
-          {renderContentView()}
+          <Suspense fallback={<ViewSpinner />}>
+            {renderContentView()}
+          </Suspense>
         </main>
       </div>
 

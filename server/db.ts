@@ -248,6 +248,54 @@ export const dbService = {
     return list.map(mapDokumen);
   },
 
+  // Optimized: Get filtered + paginated documents without loading all rows
+  async getDokumenFiltered(params: {
+    search?: string;
+    jenis_arsip_id?: string;
+    bandara_id?: string;
+    tahun_id?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const { search, jenis_arsip_id, bandara_id, tahun_id, page = 1, limit = 10 } = params;
+
+    const where: any = {};
+    if (jenis_arsip_id) where.jenisArsipId = jenis_arsip_id;
+    if (bandara_id) where.bandaraId = bandara_id;
+    if (tahun_id) where.tahunId = tahun_id;
+    if (search) {
+      const s = search.toLowerCase();
+      where.OR = [
+        { namaDokumen: { contains: s, mode: "insensitive" } },
+        { nomorDokumen: { contains: s, mode: "insensitive" } },
+        { keterangan: { contains: s, mode: "insensitive" } },
+      ];
+    }
+
+    const total = await prisma.dokumen.count({ where });
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+
+    const list = await prisma.dokumen.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      data: list.map(mapDokumen),
+      total,
+      totalPages,
+    };
+  },
+
+  // Optimized: Find single document by ID
+  async getDokumenById(id: string): Promise<Dokumen | undefined> {
+    const item = await prisma.dokumen.findUnique({ where: { id } });
+    return item ? mapDokumen(item) : undefined;
+  },
+
   async addDokumen(data: Omit<Dokumen, "id" | "created_at" | "updated_at">): Promise<Dokumen> {
     const item = await prisma.dokumen.create({
       data: {
@@ -293,6 +341,94 @@ export const dbService = {
     }
   },
 
+  // Optimized: Get document count grouped by tahunId for a specific category
+  async getYearCountsByCategory(jenisArsipId?: string): Promise<Record<string, number>> {
+    const where: any = {};
+    if (jenisArsipId) where.jenisArsipId = jenisArsipId;
+
+    const groups = await prisma.dokumen.groupBy({
+      by: ["tahunId"],
+      where,
+      _count: { id: true },
+    });
+
+    const counts: Record<string, number> = {};
+    for (const g of groups) {
+      counts[g.tahunId] = g._count.id;
+    }
+    return counts;
+  },
+
+  // Optimized: Get dashboard metrics without loading all documents
+  async getDashboardMetrics() {
+    const currentYear = new Date().getFullYear().toString();
+
+    const [totalDokumen, categories, years, docsByCategoryRaw, docsByYearRaw] = await Promise.all([
+      prisma.dokumen.count(),
+      prisma.jenisArsip.findMany({ orderBy: { namaJenis: "asc" } }),
+      prisma.tahun.findMany({ orderBy: { tahun: "asc" } }),
+      prisma.dokumen.groupBy({ by: ["jenisArsipId"], _count: { id: true } }),
+      prisma.dokumen.groupBy({ by: ["tahunId"], _count: { id: true } }),
+    ]);
+
+    // Find current year Tahun record
+    const currentTahun = years.find(y => y.tahun === currentYear);
+    const totalUploadTahunIni = currentTahun
+      ? (docsByYearRaw.find(y => y.tahunId === currentTahun.tahun)?._count.id || 0)
+      : 0;
+
+    // Map docsByCategoryRaw
+    const catMap = new Map(categories.map(c => [c.id, c.namaJenis]));
+    const docsByCategory = docsByCategoryRaw.map(d => ({
+      name: catMap.get(d.jenisArsipId) || "Unknown",
+      value: d._count.id,
+    }));
+
+    // Map docsByYearRaw
+    const yearMap = new Map(years.map(y => [y.id, y.tahun]));
+    const docsByYear = docsByYearRaw.map(d => ({
+      name: yearMap.get(d.tahunId) || "Unknown",
+      value: d._count.id,
+    }));
+
+    // Get recent 5 documents with joins
+    const recentDocsRaw = await prisma.dokumen.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+    const airports = await prisma.bandarUdara.findMany();
+    const airportMap = new Map(airports.map(a => [a.id, a.namaBandara]));
+    const yearMap2 = new Map(years.map(y => [y.id, y.tahun]));
+    const catMap2 = new Map(categories.map(c => [c.id, c.namaJenis]));
+
+    const recentDocs = recentDocsRaw.map(d => ({
+      id: d.id,
+      nama_dokumen: d.namaDokumen,
+      nomor_dokumen: d.nomorDokumen,
+      keterangan: d.keterangan || "",
+      jenis_arsip_id: d.jenisArsipId,
+      bandara_id: d.bandaraId,
+      tahun_id: d.tahunId,
+      file_url: d.fileUrl,
+      uploaded_by: d.uploadedBy,
+      created_at: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
+      updated_at: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : d.updatedAt,
+      tanggal_dokumen: d.tanggalDokumen || undefined,
+      nama_bandara: airportMap.get(d.bandaraId) || "Unknown Airport",
+      tahun: yearMap2.get(d.tahunId) || "Unknown Year",
+      nama_kategori: catMap2.get(d.jenisArsipId) || "Unknown Category",
+    }));
+
+    return {
+      totalDokumen,
+      totalUploadTahunIni,
+      totalKategori: categories.length,
+      docsByCategory,
+      docsByYear,
+      recentDocs,
+    };
+  },
+
   // Activity Logs
   async getLogs(): Promise<LogAktivitas[]> {
     const list = await prisma.logAktivitas.findMany({
@@ -300,6 +436,25 @@ export const dbService = {
       take: 1000,
     });
     return list.map(mapLogAktivitas);
+  },
+
+  // Optimized: Get paginated logs
+  async getLogsPaginated(page: number = 1, limit: number = 15) {
+    const total = await prisma.logAktivitas.count();
+    const totalPages = Math.ceil(total / limit);
+    const offset = (page - 1) * limit;
+
+    const list = await prisma.logAktivitas.findMany({
+      orderBy: { tanggal: "desc" },
+      skip: offset,
+      take: limit,
+    });
+
+    return {
+      data: list.map(mapLogAktivitas),
+      total,
+      totalPages,
+    };
   },
 
   async addLog(username: string, aktivitas: string, detail: string): Promise<LogAktivitas> {

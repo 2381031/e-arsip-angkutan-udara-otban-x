@@ -81,6 +81,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   const [formTanggal, setFormTanggal] = useState("");
   const [formFile, setFormFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Fetch helper lists (Airports, Years, Categories)
   const fetchHelpers = async () => {
@@ -98,23 +99,19 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     }
   };
 
-  // Compute Year Counts for Folders dynamically based on category
+  // Compute Year Counts for Folders - uses optimized server endpoint with GROUP BY
   const fetchYearCounts = async () => {
-    if (categories.length === 0) return;
     try {
       const activeCatObj = findCategoryForMenu(categories, activeCategory);
-      if (!activeCatObj) return;
+      let url = "/api/dokumen/year-counts";
+      if (activeCatObj) url += `?jenis_arsip_id=${activeCatObj.id}`;
 
-      const res = await fetch(`/api/dokumen?limit=100000&jenis_arsip_id=${activeCatObj.id}`, {
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok && data.data) {
-        const counts: Record<string, number> = {};
-        data.data.forEach((doc: any) => {
-          counts[doc.tahun_id] = (counts[doc.tahun_id] || 0) + 1;
-        });
-        setYearCounts(counts);
+      if (res.ok) {
+        setYearCounts(data);
       }
     } catch (err) {
       console.error("Failed to compute year folder counts", err);
@@ -278,7 +275,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     setIsEditModalOpen(true);
   };
 
-  // Handle document submission (UPLOAD)
+  // Handle document submission (UPLOAD with progress tracking)
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formNama || !formNomor || !formKategoriId || !formBandaraId || !formTanggal || !formFile) {
@@ -287,45 +284,62 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
     }
 
     setUploading(true);
+    setUploadProgress(0);
+
     const formData = new FormData();
     formData.append("nama_dokumen", formNama);
     formData.append("nomor_dokumen", formNomor);
     formData.append("keterangan", formKeterangan);
     formData.append("jenis_arsip_id", formKategoriId);
     formData.append("bandara_id", formBandaraId);
-    
-    // Extracted year
+
     const extractedYear = formTanggal.split("-")[0] || new Date().getFullYear().toString();
     formData.append("tahun_id", extractedYear);
     formData.append("tanggal_dokumen", formTanggal);
     formData.append("file", formFile);
 
     try {
-      const res = await fetch("/api/dokumen", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/dokumen");
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to upload document");
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setUploadProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        };
+
+        xhr.onload = () => {
+          try {
+            const data = JSON.parse(xhr.responseText);
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(data);
+            } else {
+              reject(new Error(data.message || "Upload gagal"));
+            }
+          } catch {
+            reject(new Error("Upload gagal memproses respons server"));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Gagal menghubungi server"));
+        xhr.send(formData);
+      });
 
       addToast("Dokumen berhasil diunggah dan terarsip!", "success");
       setIsUploadModalOpen(false);
-      
-      // Reload years helper and year counts to reflect dynamic folder creation
+      setUploadProgress(0);
+
       await fetchHelpers();
-      
-      // If we are currently in the folder view, just refresh counts
+
       if (!selectedYear) {
         await fetchYearCounts();
       } else {
-        // If uploaded file belongs to current selectedYear, refresh document lists
         const fileYear = formTanggal.split("-")[0];
         if (fileYear === selectedYear.tahun) {
           fetchDocuments();
         } else {
-          // If uploaded file belongs to a different year, optionally switch folder or stay
           addToast(`File masuk otomatis ke folder tahun ${fileYear}`, "info");
           fetchYearCounts();
         }
@@ -334,6 +348,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       addToast(err.message || "Gagal mengunggah file", "error");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -839,18 +854,32 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsUploadModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs cursor-pointer"
+                  disabled={uploading}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs cursor-pointer disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 min-w-[140px] justify-center"
                 >
-                  {uploading ? "Sedang Mengunggah..." : "Mulai Upload"}
+                  {uploading ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>{uploadProgress}%</span>
+                    </span>
+                  ) : "Mulai Upload"}
                 </button>
               </div>
+              {uploading && (
+                <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden -mt-1">
+                  <div
+                    className="bg-emerald-500 h-full rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+              )}
             </form>
           </div>
         </div>

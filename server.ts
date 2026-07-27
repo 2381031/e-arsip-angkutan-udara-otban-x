@@ -322,67 +322,47 @@ app.get("/api/jenis-arsip", authenticateToken, async (req, res) => {
   res.json(await dbService.getJenisArsip());
 });
 
-// 6. DOKUMEN (GET with filtering, search, pagination)
+// 6. DOKUMEN (GET with filtering, search, pagination - optimized DB query)
 app.get("/api/dokumen", authenticateToken, async (req, res) => {
   const { search, jenis_arsip_id, bandara_id, tahun_id, page, limit } = req.query;
 
-  let list = await dbService.getDokumen();
-
-  // Apply search filtering
-  if (search) {
-    const s = String(search).toLowerCase();
-    list = list.filter(
-      d =>
-        d.nama_dokumen.toLowerCase().includes(s) ||
-        d.nomor_dokumen.toLowerCase().includes(s) ||
-        (d.keterangan && d.keterangan.toLowerCase().includes(s))
-    );
-  }
-
-  // Apply categorical filtering
-  if (jenis_arsip_id) {
-    list = list.filter(d => d.jenis_arsip_id === jenis_arsip_id);
-  }
-  if (bandara_id) {
-    list = list.filter(d => d.bandara_id === bandara_id);
-  }
-  if (tahun_id) {
-    list = list.filter(d => d.tahun_id === tahun_id);
-  }
-
-  // Join collections data
-  const airports = await dbService.getBandarUdara();
-  const years = await dbService.getTahun();
-  const categories = await dbService.getJenisArsip();
-
-  const joinedList = list.map(doc => {
-    const bandara = airports.find(b => b.id === doc.bandara_id)?.nama_bandara || "Unknown Airport";
-    const tahun = years.find(y => y.id === doc.tahun_id)?.tahun || "Unknown Year";
-    const kategori = categories.find(c => c.id === doc.jenis_arsip_id)?.nama_jenis || "Unknown Category";
-
-    return {
-      ...doc,
-      nama_bandara: bandara,
-      tahun: tahun,
-      nama_kategori: kategori,
-    };
-  });
-
-  // Pagination
   const pageNum = parseInt(String(page || "1"), 10);
   const limitNum = parseInt(String(limit || "10"), 10);
-  const total = joinedList.length;
-  const totalPages = Math.ceil(total / limitNum);
-  const offset = (pageNum - 1) * limitNum;
-  const paginatedList = joinedList.slice(offset, offset + limitNum);
+
+  const result = await dbService.getDokumenFiltered({
+    search: search ? String(search) : undefined,
+    jenis_arsip_id: jenis_arsip_id ? String(jenis_arsip_id) : undefined,
+    bandara_id: bandara_id ? String(bandara_id) : undefined,
+    tahun_id: tahun_id ? String(tahun_id) : undefined,
+    page: pageNum,
+    limit: limitNum,
+  });
+
+  // Join reference data (small tables: airports, years, categories)
+  const [airports, years, categories] = await Promise.all([
+    dbService.getBandarUdara(),
+    dbService.getTahun(),
+    dbService.getJenisArsip(),
+  ]);
+
+  const airportMap = new Map(airports.map(b => [b.id, b.nama_bandara]));
+  const yearMap = new Map(years.map(y => [y.id, y.tahun]));
+  const catMap = new Map(categories.map(c => [c.id, c.nama_jenis]));
+
+  const joinedList = result.data.map(doc => ({
+    ...doc,
+    nama_bandara: airportMap.get(doc.bandara_id) || "Unknown Airport",
+    tahun: yearMap.get(doc.tahun_id) || "Unknown Year",
+    nama_kategori: catMap.get(doc.jenis_arsip_id) || "Unknown Category",
+  }));
 
   res.json({
-    data: paginatedList,
+    data: joinedList,
     pagination: {
-      total,
+      total: result.total,
       page: pageNum,
       limit: limitNum,
-      totalPages,
+      totalPages: result.totalPages,
     },
   });
 });
@@ -512,8 +492,7 @@ app.put("/api/dokumen/:id", authenticateToken, async (req: any, res) => {
 app.delete("/api/dokumen/:id", authenticateToken, async (req: any, res) => {
   try {
     const { id } = req.params;
-    const list = await dbService.getDokumen();
-    const doc = list.find(d => d.id === id);
+    const doc = await dbService.getDokumenById(id);
 
     if (!doc) {
       return res.status(404).json({
@@ -547,8 +526,7 @@ app.delete("/api/dokumen/:id", authenticateToken, async (req: any, res) => {
 // Trigger download logger
 app.post("/api/dokumen/:id/download-log", authenticateToken, async (req: any, res) => {
   const { id } = req.params;
-  const list = await dbService.getDokumen();
-  const doc = list.find(d => d.id === id);
+  const doc = await dbService.getDokumenById(id);
   if (doc) {
     await dbService.addLog(
       req.user.username,
@@ -619,8 +597,7 @@ async function loadDocumentFile(fileUrl: string): Promise<{ buffer: Buffer; cont
 app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
   try {
     const { id } = req.params;
-    const list = await dbService.getDokumen();
-    const doc = list.find(d => d.id === id);
+    const doc = await dbService.getDokumenById(id);
 
     if (!doc) {
       return res.status(404).json({ message: "Dokumen tidak ditemukan." });
@@ -641,74 +618,44 @@ app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
   }
 });
 
-// 7. DASHBOARD METRICS
+// 7. DASHBOARD METRICS (optimized - no full table scan)
 app.get("/api/dashboard/metrics", authenticateToken, async (req, res) => {
-  const docs = await dbService.getDokumen();
-  const airports = await dbService.getBandarUdara();
-  const categories = await dbService.getJenisArsip();
-  const years = await dbService.getTahun();
-
-  const currentYear = new Date().getFullYear().toString();
-  const uploadThisYearCount = docs.filter(d => {
-    // Check if document was uploaded in current calendar year or belongs to current year
-    const docYearRelation = years.find(y => y.id === d.tahun_id);
-    return docYearRelation && docYearRelation.tahun === currentYear;
-  }).length;
-
-  // Documents per Category
-  const docsByCategory = categories.map(c => {
-    const count = docs.filter(d => d.jenis_arsip_id === c.id).length;
-    return { name: c.nama_jenis, value: count };
-  });
-
-  // Documents per Year
-  const docsByYear = years.map(y => {
-    const count = docs.filter(d => d.tahun_id === y.id).length;
-    return { name: y.tahun, value: count };
-  });
-
-  // Recent 5 documents
-  const joinedDocs = docs.slice(0, 5).map(doc => {
-    const bandara = airports.find(b => b.id === doc.bandara_id)?.nama_bandara || "Unknown Airport";
-    const tahun = years.find(y => y.id === doc.tahun_id)?.tahun || "Unknown Year";
-    const kategori = categories.find(c => c.id === doc.jenis_arsip_id)?.nama_jenis || "Unknown Category";
-    return {
-      ...doc,
-      nama_bandara: bandara,
-      tahun: tahun,
-      nama_kategori: kategori,
-    };
-  });
-
-  res.json({
-    totalDokumen: docs.length,
-    totalUploadTahunIni: uploadThisYearCount,
-    totalKategori: categories.length,
-    docsByCategory,
-    docsByYear,
-    recentDocs: joinedDocs,
-  });
+  try {
+    const metrics = await dbService.getDashboardMetrics();
+    res.json(metrics);
+  } catch (error: any) {
+    console.error("Dashboard metrics error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat metrik dashboard." });
+  }
 });
 
-// 8. LOGS LIST WITH PAGINATION
+// 7b. YEAR COUNTS (optimized - uses GROUP BY instead of fetching all docs)
+app.get("/api/dokumen/year-counts", authenticateToken, async (req, res) => {
+  try {
+    const { jenis_arsip_id } = req.query;
+    const counts = await dbService.getYearCountsByCategory(jenis_arsip_id as string | undefined);
+    res.json(counts);
+  } catch (error: any) {
+    console.error("Year counts error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat jumlah dokumen per tahun." });
+  }
+});
+
+// 8. LOGS LIST WITH PAGINATION (optimized DB query)
 app.get("/api/logs", authenticateToken, async (req, res) => {
   const { page, limit } = req.query;
-  const list = await dbService.getLogs();
-
   const pageNum = parseInt(String(page || "1"), 10);
   const limitNum = parseInt(String(limit || "15"), 10);
-  const total = list.length;
-  const totalPages = Math.ceil(total / limitNum);
-  const offset = (pageNum - 1) * limitNum;
-  const paginatedLogs = list.slice(offset, offset + limitNum);
+
+  const result = await dbService.getLogsPaginated(pageNum, limitNum);
 
   res.json({
-    data: paginatedLogs,
+    data: result.data,
     pagination: {
-      total,
+      total: result.total,
       page: pageNum,
       limit: limitNum,
-      totalPages,
+      totalPages: result.totalPages,
     },
   });
 });
@@ -726,7 +673,6 @@ async function start() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(distPath));
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));

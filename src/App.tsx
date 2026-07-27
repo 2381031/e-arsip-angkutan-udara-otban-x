@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, useCallback, memo } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback, memo, Component, type ReactNode } from "react";
 import { Sidebar } from "./components/Sidebar.js";
 import { Navbar } from "./components/Navbar.js";
 import { LoginScreen } from "./components/LoginScreen.js";
@@ -19,6 +19,31 @@ function ViewSpinner() {
       <span className="mt-3 text-xs font-semibold text-slate-400 font-mono">Memuat halaman...</span>
     </div>
   );
+}
+
+// Error boundary to catch lazy load failures
+class LazyErrorBoundary extends Component<
+  { children: ReactNode; onRetry?: () => void },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
+          <p className="text-sm font-semibold text-red-500">Gagal memuat halaman ini.</p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); this.props.onRetry?.(); }}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 export default function App() {
@@ -287,9 +312,11 @@ export default function App() {
         />
 
         <main className="flex-1 p-4 md:p-6 max-w-7xl w-full mx-auto pb-16">
-          <Suspense fallback={<ViewSpinner />}>
-            {renderContentView()}
-          </Suspense>
+          <LazyErrorBoundary onRetry={() => setActiveMenu(activeMenu)}>
+            <Suspense fallback={<ViewSpinner />}>
+              {renderContentView()}
+            </Suspense>
+          </LazyErrorBoundary>
         </main>
       </div>
 

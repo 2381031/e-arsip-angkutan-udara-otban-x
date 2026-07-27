@@ -91,9 +91,9 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
         fetch("/api/tahun", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/jenis-arsip", { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      setAirports(await resB.json());
-      setYears(await resY.json());
-      setCategories(await resC.json());
+      if (resB.ok) setAirports(await resB.json());
+      if (resY.ok) setYears(await resY.json());
+      if (resC.ok) setCategories(await resC.json());
     } catch (err) {
       console.error("Failed to load options", err);
     }

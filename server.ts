@@ -11,11 +11,28 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "otban-x-super-secret-key-2026";
 
+// Prevent unhandled rejections from crashing the serverless function
+process.on("unhandledRejection", (err: any) => {
+  console.error("[UNHANDLED REJECTION]", err?.message || err);
+});
+
 
 
 // Support JSON and urlencoded request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check (for debugging Vercel deployment)
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    hasDbUrl: !!process.env.DATABASE_URL,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    hasBlobToken: !!process.env.BLOB_READ_WRITE_TOKEN,
+    nodeEnv: process.env.NODE_ENV || "development",
+    vercel: !!process.env.VERCEL,
+  });
+});
 
 const upload = multer({
     storage: multer.memoryStorage(),

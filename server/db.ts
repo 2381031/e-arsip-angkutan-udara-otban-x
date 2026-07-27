@@ -49,8 +49,20 @@ export interface LogAktivitas {
 
 // Global cache for PrismaClient in serverless (e.g. Vercel)
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
-export const prisma = globalForPrisma.prisma || new PrismaClient();
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+function createPrismaClient() {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    console.error("[DB] DATABASE_URL is not set! API routes will fail.");
+  }
+  return new PrismaClient({
+    log: process.env.NODE_ENV !== "production" ? ["error", "warn"] : ["error"],
+  });
+}
+
+export const prisma = globalForPrisma.prisma || createPrismaClient();
+// Always cache in production (serverless) to prevent connection exhaustion
+globalForPrisma.prisma = prisma;
 
 // Mapping functions to keep exact backward-compatibility with front-end property names
 function mapAdmin(a: any): Admin {

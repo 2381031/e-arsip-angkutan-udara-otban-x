@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, User, Eye, EyeOff, LogIn, Sun, Moon } from "lucide-react";
+import { Lock, User, Eye, EyeOff, LogIn, Sun, Moon, CheckCircle, AlertCircle } from "lucide-react";
 import { OtbanLogo } from "./OtbanLogo.js";
 import { APP_SUBTITLE, APP_TITLE } from "../constants/branding.js";
 
@@ -21,6 +21,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginStep, setLoginStep] = useState<"idle" | "connecting" | "authenticating" | "loading_session" | "success" | "error">("idle");
 
   // Auto-populate if remember me was saved previously
   useEffect(() => {
@@ -39,8 +40,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
 
     setLoading(true);
+    setLoginStep("connecting");
 
     try {
+      setLoginStep("authenticating");
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -60,6 +63,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         throw new Error(data.message || "Login gagal");
       }
 
+      setLoginStep("loading_session");
+
       // Handle remember me
       if (rememberMe) {
         localStorage.setItem("remembered_username", username);
@@ -67,12 +72,37 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         localStorage.removeItem("remembered_username");
       }
 
+      setLoginStep("success");
       addToast(`Berhasil login! Selamat datang di ${APP_TITLE}.`, "success");
       onLoginSuccess(data.token, data.user);
     } catch (err: any) {
+      setLoginStep("error");
       addToast(err.message || "Koneksi ke server gagal", "error");
+      setTimeout(() => setLoginStep("idle"), 2000);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getStepLabel = () => {
+    switch (loginStep) {
+      case "connecting": return "Menghubungi server...";
+      case "authenticating": return "Memeriksa kredensial...";
+      case "loading_session": return "Memuat sesi Anda...";
+      case "success": return "Berhasil! Mengarahkan...";
+      case "error": return "Gagal. Silakan coba lagi.";
+      default: return "Masuk Aplikasi";
+    }
+  };
+
+  const getStepIcon = () => {
+    switch (loginStep) {
+      case "success":
+        return <CheckCircle className="w-5 h-5 text-emerald-300" />;
+      case "error":
+        return <AlertCircle className="w-5 h-5 text-rose-300" />;
+      default:
+        return <LogIn className="w-5 h-5" />;
     }
   };
 
@@ -122,7 +152,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 placeholder="Masukkan username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition text-sm"
+                disabled={loading}
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition text-sm disabled:opacity-60"
               />
             </div>
           </div>
@@ -141,7 +172,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 placeholder="Masukkan password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition text-sm"
+                disabled={loading}
+                className="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition text-sm disabled:opacity-60"
               />
               <button
                 type="button"
@@ -160,32 +192,57 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 dark:bg-slate-950 dark:border-slate-800"
+                disabled={loading}
+                className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 dark:bg-slate-950 dark:border-slate-800 disabled:opacity-50"
               />
               <span>Remember Me</span>
             </label>
           </div>
 
-          {/* Submit Button */}
-          <button
-            id="login-btn"
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-700/30 transition duration-150 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            {loading ? (
-              <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            ) : (
-              <>
-                <LogIn className="w-5 h-5" />
-                <span>Masuk Aplikasi</span>
-              </>
+          {/* Submit Button with Step Feedback */}
+          <div className="space-y-3">
+            <button
+              id="login-btn"
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-700/30 transition duration-150 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  <span className="text-sm">{getStepLabel()}</span>
+                </span>
+              ) : (
+                <>
+                  {getStepIcon()}
+                  <span>Masuk Aplikasi</span>
+                </>
+              )}
+            </button>
+
+            {/* Step progress indicators */}
+            {loading && (
+              <div className="flex items-center justify-center gap-1.5">
+                {(["connecting", "authenticating", "loading_session"] as const).map((step) => {
+                  const isDone = ["authenticating", "loading_session", "success"].indexOf(loginStep) > ["connecting", "authenticating", "loading_session"].indexOf(step);
+                  const isCurrent = loginStep === step;
+                  return (
+                    <div
+                      key={step}
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                        isDone
+                          ? "w-8 bg-emerald-400"
+                          : isCurrent
+                          ? "w-8 bg-emerald-600 animate-pulse"
+                          : "w-4 bg-slate-200 dark:bg-slate-700"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
             )}
-          </button>
+          </div>
         </form>
-
-
-
       </div>
     </div>
   );

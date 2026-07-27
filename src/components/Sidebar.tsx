@@ -44,6 +44,7 @@ const standaloneMenuItems: {
   label: string;
   icon: React.ReactNode;
 }[] = [
+  { id: "peraturan", label: "Peraturan", icon: <FolderArchive className="w-5 h-5" /> },
   { id: "rapat", label: "Rapat", icon: <Users className="w-5 h-5" /> },
   { id: "surat", label: "Surat", icon: <Mail className="w-5 h-5" /> },
   { id: "nota_dinas", label: "Nota dinas", icon: <FilePenLine className="w-5 h-5" /> },
@@ -353,13 +354,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {openPengendalian && (
                     <div className="pl-6 space-y-1 mt-1">
                       <button
-                        id="sidebar-menu-peraturan"
-                        onClick={() => handleMenuClick("peraturan")}
-                        className={subMenuButtonClass(activeMenu === "peraturan")}
-                      >
-                        Peraturan
-                      </button>
-                      <button
                         id="sidebar-menu-rekonsiliasi"
                         onClick={() => handleMenuClick("rekonsiliasi")}
                         className={subMenuButtonClass(activeMenu === "rekonsiliasi")}
@@ -378,13 +372,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => handleMenuClick("peraturan")}
-                    className={menuButtonClass(activeMenu === "peraturan")}
-                    title="Peraturan"
-                  >
-                    <FolderArchive className="w-5 h-5" />
-                  </button>
                   <button
                     onClick={() => handleMenuClick("rekonsiliasi")}
                     className={menuButtonClass(activeMenu === "rekonsiliasi")}

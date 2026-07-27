@@ -259,21 +259,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                   )}
 
-                  {/* Standalone items */}
-                  {standaloneMenuItems.map((item) => (
-                    <button
-                      key={item.id}
-                      id={`sidebar-menu-${item.id}`}
-                      onClick={() => handleMenuClick(item.id)}
-                      className={topItemClass(isActive(item.id))}
-                    >
-                      <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
-                        {item.icon}
-                      </span>
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-
                   {/* PENGENDALIAN */}
                   <button
                     onClick={() => setOpenPengendalian(!openPengendalian)}
@@ -291,6 +276,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       {renderSubItems(pengendalianSubItems)}
                     </div>
                   )}
+
+                  {/* Standalone items */}
+                  {standaloneMenuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      id={`sidebar-menu-${item.id}`}
+                      onClick={() => handleMenuClick(item.id)}
+                      className={topItemClass(isActive(item.id))}
+                    >
+                      <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
                 </>
               ) : (
                 <>
@@ -305,11 +305,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     { id: "delay_management", label: "Delay Management", icon: <Clock className="w-5 h-5" /> },
                     { id: "haji", label: "Haji", icon: <Building2 className="w-5 h-5" /> },
                   ])}
-                  {renderCollapsedSubItems(standaloneMenuItems)}
                   {renderCollapsedSubItems([
                     { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-5 h-5" /> },
                     { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-5 h-5" /> },
                   ])}
+                  {renderCollapsedSubItems(standaloneMenuItems)}
                 </>
               )}
             </nav>

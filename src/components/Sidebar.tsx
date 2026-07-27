@@ -39,15 +39,37 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-const standaloneMenuItems: {
+interface MenuItem {
   id: ActiveMenu;
   label: string;
   icon: React.ReactNode;
-}[] = [
+}
+
+const standaloneMenuItems: MenuItem[] = [
   { id: "peraturan", label: "Peraturan", icon: <FolderArchive className="w-5 h-5" /> },
   { id: "rapat", label: "Rapat", icon: <Users className="w-5 h-5" /> },
   { id: "surat", label: "Surat", icon: <Mail className="w-5 h-5" /> },
   { id: "nota_dinas", label: "Nota dinas", icon: <FilePenLine className="w-5 h-5" /> },
+];
+
+const pengawasanSubItems: MenuItem[] = [
+  { id: "lalu_lintas", label: "Lalu Lintas Angkutan Udara", icon: <Plane className="w-4 h-4" /> },
+  { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-4 h-4" /> },
+  { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-4 h-4" /> },
+  { id: "tarif", label: "Tarif", icon: <BadgeDollarSign className="w-4 h-4" /> },
+  { id: "perintis", label: "Perintis", icon: <Navigation className="w-4 h-4" /> },
+  { id: "delay_management", label: "Delay Management", icon: <Clock className="w-4 h-4" /> },
+  { id: "haji", label: "Haji", icon: <Building2 className="w-4 h-4" /> },
+];
+
+const pprpSubItems: MenuItem[] = [
+  { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: null },
+  { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: null },
+];
+
+const pengendalianSubItems: MenuItem[] = [
+  { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-4 h-4" /> },
+  { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-4 h-4" /> },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -60,10 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen = false,
   onCloseMobile,
 }) => {
-  const adminMenu = [
-    { id: "airports" as ActiveMenu, label: "Daftar Bandara", icon: <MapPin className="w-5 h-5" /> },
-    { id: "admins" as ActiveMenu, label: "Kelola Admin", icon: <UserCog className="w-5 h-5" /> },
-    { id: "logs" as ActiveMenu, label: "Log Aktivitas", icon: <Activity className="w-5 h-5" /> },
+  const adminMenu: MenuItem[] = [
+    { id: "airports", label: "Daftar Bandara", icon: <MapPin className="w-5 h-5" /> },
+    { id: "admins", label: "Kelola Admin", icon: <UserCog className="w-5 h-5" /> },
+    { id: "logs", label: "Log Aktivitas", icon: <Activity className="w-5 h-5" /> },
   ];
 
   const [openPengawasan, setOpenPengawasan] = useState(true);
@@ -75,26 +97,64 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (onCloseMobile) onCloseMobile();
   };
 
-  const menuButtonClass = (isActive: boolean) =>
-    `w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
-      isActive
-        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30 shadow-sm"
-        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
+  const isActive = (menu: ActiveMenu) => activeMenu === menu;
+
+  const topItemClass = (active: boolean) =>
+    `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer ${
+      active
+        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-100 dark:border-emerald-900/30 shadow-sm"
+        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 font-medium border border-transparent"
     }`;
 
-  const subMenuButtonClass = (isActive: boolean) =>
-    `w-full flex items-center gap-3 px-3 py-2 rounded-lg font-medium text-sm transition-all cursor-pointer ${
-      isActive
-        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+  const subItemClass = (active: boolean) =>
+    `w-full flex items-center gap-2.5 pl-4 pr-3 py-1.5 rounded-lg text-sm transition-all cursor-pointer ${
+      active
+        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium"
+        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+    }`;
+
+  const nestedItemClass = (active: boolean) =>
+    `w-full flex items-center gap-2 pl-8 pr-3 py-1 rounded-md text-xs transition-all cursor-pointer ${
+      active
+        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium"
+        : "text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300 font-medium"
+    }`;
+
+  const collapseBtnClass = (open: boolean) =>
+    `w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+      open
+        ? "text-slate-800 dark:text-slate-200"
         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
-    }`;
+    } border border-transparent hover:border-slate-200 dark:hover:border-slate-700`;
 
-  const nestedMenuButtonClass = (isActive: boolean) =>
-    `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer ${
-      isActive
-        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
-        : "text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300"
-    }`;
+  const renderSubItems = (items: MenuItem[], level: "sub" | "nested") => {
+    const cls = level === "sub" ? subItemClass : nestedItemClass;
+    return items.map((item) => (
+      <button
+        key={item.id}
+        id={`sidebar-menu-${item.id}`}
+        onClick={() => handleMenuClick(item.id)}
+        className={cls(isActive(item.id))}
+      >
+        {item.icon && <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>{item.icon}</span>}
+        <span>{item.label}</span>
+      </button>
+    ));
+  };
+
+  const renderCollapsedSubItems = (items: MenuItem[]) => {
+    return items.map((item) => (
+      <button
+        key={item.id}
+        id={`sidebar-menu-${item.id}`}
+        onClick={() => handleMenuClick(item.id)}
+        className={topItemClass(isActive(item.id))}
+        title={item.label}
+      >
+        {item.icon && <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>{item.icon}</span>}
+      </button>
+    ));
+  };
 
   return (
     <>
@@ -110,6 +170,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           collapsed ? "md:w-20" : "md:w-64"
         } ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full md:translate-x-0"}`}
       >
+        {/* Header */}
         <div className="flex flex-col items-center py-6 border-b border-slate-100 dark:border-slate-800 relative">
           <div className="transform hover:rotate-6 transition duration-300">
             <OtbanLogo className={collapsed ? "w-10 h-10" : "w-16 h-16"} />
@@ -135,21 +196,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-6 px-3 space-y-7">
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto py-4 px-2.5 space-y-5">
           <div>
             {!collapsed && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 font-mono">
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 font-mono">
                 Menu Utama
               </p>
             )}
-            <nav className="space-y-1">
+            <nav className="space-y-0.5">
+              {/* Dashboard */}
               <button
                 id="sidebar-menu-dashboard"
                 onClick={() => handleMenuClick("dashboard")}
-                className={menuButtonClass(activeMenu === "dashboard")}
+                className={topItemClass(isActive("dashboard"))}
                 title={collapsed ? "Dashboard" : ""}
               >
-                <span className={activeMenu === "dashboard" ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                <span className={isActive("dashboard") ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                   <LayoutDashboard className="w-5 h-5" />
                 </span>
                 {!collapsed && <span>Dashboard</span>}
@@ -157,272 +220,133 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {!collapsed ? (
                 <>
-                  {/* PENGAWASAN - Collapsible */}
+                  {/* PENGAWASAN */}
                   <button
                     onClick={() => setOpenPengawasan(!openPengawasan)}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-semibold text-sm transition-all cursor-pointer border border-transparent hover:text-slate-900 dark:hover:text-slate-100"
+                    className={collapseBtnClass(openPengawasan)}
                   >
-                    <div className="flex items-center gap-3.5">
+                    <div className="flex items-center gap-3">
                       <ShieldCheck className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                       <span>Pengawasan</span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${openPengawasan ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengawasan ? "rotate-180" : ""}`} />
                   </button>
 
                   {openPengawasan && (
-                    <div className="pl-6 space-y-1 mt-1">
-                      {/* PPRP - Nested collapsible */}
+                    <div className="space-y-0.5 mt-0.5">
+                      {/* PPRP nested */}
                       <button
                         onClick={() => setOpenPPRP(!openPPRP)}
-                        className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-medium text-sm transition-all cursor-pointer"
+                        className={`w-full flex items-center justify-between gap-2 pl-6 pr-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                          openPPRP
+                            ? "text-slate-800 dark:text-slate-200"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                        }`}
                       >
                         <div className="flex items-center gap-2.5">
                           <Compass className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                           <span>PPRP</span>
                         </div>
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openPPRP ? "rotate-180" : ""}`} />
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openPPRP ? "rotate-180" : ""}`} />
                       </button>
 
                       {openPPRP && (
-                        <div className="pl-5 space-y-0.5 mt-0.5">
-                          <button
-                            id="sidebar-menu-pprp_14_hari"
-                            onClick={() => handleMenuClick("pprp_14_hari")}
-                            className={nestedMenuButtonClass(activeMenu === "pprp_14_hari")}
-                          >
-                            PPRP 14 Hari
-                          </button>
-                          <button
-                            id="sidebar-menu-pengawasan_pprp"
-                            onClick={() => handleMenuClick("pengawasan_pprp")}
-                            className={nestedMenuButtonClass(activeMenu === "pengawasan_pprp")}
-                          >
-                            Pengawasan PPRP
-                          </button>
+                        <div className="space-y-0.5">
+                          {renderSubItems(pprpSubItems, "nested")}
                         </div>
                       )}
 
-                      <button
-                        id="sidebar-menu-lalu_lintas"
-                        onClick={() => handleMenuClick("lalu_lintas")}
-                        className={subMenuButtonClass(activeMenu === "lalu_lintas")}
-                      >
-                        Lalu Lintas Angkutan Udara
-                      </button>
-                      <button
-                        id="sidebar-menu-flight_approval"
-                        onClick={() => handleMenuClick("flight_approval")}
-                        className={subMenuButtonClass(activeMenu === "flight_approval")}
-                      >
-                        Flight Approval
-                      </button>
-                      <button
-                        id="sidebar-menu-pelayanan"
-                        onClick={() => handleMenuClick("pelayanan")}
-                        className={subMenuButtonClass(activeMenu === "pelayanan")}
-                      >
-                        Pelayanan
-                      </button>
-                      <button
-                        id="sidebar-menu-tarif"
-                        onClick={() => handleMenuClick("tarif")}
-                        className={subMenuButtonClass(activeMenu === "tarif")}
-                      >
-                        Tarif
-                      </button>
-                      <button
-                        id="sidebar-menu-perintis"
-                        onClick={() => handleMenuClick("perintis")}
-                        className={subMenuButtonClass(activeMenu === "perintis")}
-                      >
-                        Perintis
-                      </button>
-                      <button
-                        id="sidebar-menu-delay_management"
-                        onClick={() => handleMenuClick("delay_management")}
-                        className={subMenuButtonClass(activeMenu === "delay_management")}
-                      >
-                        Delay Management
-                      </button>
-                      <button
-                        id="sidebar-menu-haji"
-                        onClick={() => handleMenuClick("haji")}
-                        className={subMenuButtonClass(activeMenu === "haji")}
-                      >
-                        Haji
-                      </button>
+                      {renderSubItems(pengawasanSubItems, "sub")}
+                    </div>
+                  )}
+
+                  {/* Standalone items */}
+                  {standaloneMenuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      id={`sidebar-menu-${item.id}`}
+                      onClick={() => handleMenuClick(item.id)}
+                      className={topItemClass(isActive(item.id))}
+                    >
+                      <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+
+                  {/* PENGENDALIAN */}
+                  <button
+                    onClick={() => setOpenPengendalian(!openPengendalian)}
+                    className={collapseBtnClass(openPengendalian)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Scale className="w-5 h-5 text-slate-400 dark:text-slate-500" />
+                      <span>Pengendalian</span>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengendalian ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {openPengendalian && (
+                    <div className="space-y-0.5 mt-0.5">
+                      {renderSubItems(pengendalianSubItems, "sub")}
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <button
-                    onClick={() => handleMenuClick("pprp_14_hari")}
-                    className={menuButtonClass(activeMenu === "pprp_14_hari")}
-                    title="PPRP 14 Hari"
-                  >
-                    <Compass className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("pengawasan_pprp")}
-                    className={menuButtonClass(activeMenu === "pengawasan_pprp")}
-                    title="Pengawasan PPRP"
-                  >
-                    <Compass className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("lalu_lintas")}
-                    className={menuButtonClass(activeMenu === "lalu_lintas")}
-                    title="Lalu Lintas"
-                  >
-                    <Plane className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("flight_approval")}
-                    className={menuButtonClass(activeMenu === "flight_approval")}
-                    title="Flight Approval"
-                  >
-                    <FileCheck className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("pelayanan")}
-                    className={menuButtonClass(activeMenu === "pelayanan")}
-                    title="Pelayanan"
-                  >
-                    <Headphones className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("tarif")}
-                    className={menuButtonClass(activeMenu === "tarif")}
-                    title="Tarif"
-                  >
-                    <BadgeDollarSign className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("perintis")}
-                    className={menuButtonClass(activeMenu === "perintis")}
-                    title="Perintis"
-                  >
-                    <Navigation className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("delay_management")}
-                    className={menuButtonClass(activeMenu === "delay_management")}
-                    title="Delay Management"
-                  >
-                    <Clock className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("haji")}
-                    className={menuButtonClass(activeMenu === "haji")}
-                    title="Haji"
-                  >
-                    <Building2 className="w-5 h-5" />
-                  </button>
+                  {renderCollapsedSubItems([
+                    { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: <Compass className="w-5 h-5" /> },
+                    { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: <Compass className="w-5 h-5" /> },
+                    { id: "lalu_lintas", label: "Lalu Lintas", icon: <Plane className="w-5 h-5" /> },
+                    { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-5 h-5" /> },
+                    { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-5 h-5" /> },
+                    { id: "tarif", label: "Tarif", icon: <BadgeDollarSign className="w-5 h-5" /> },
+                    { id: "perintis", label: "Perintis", icon: <Navigation className="w-5 h-5" /> },
+                    { id: "delay_management", label: "Delay Management", icon: <Clock className="w-5 h-5" /> },
+                    { id: "haji", label: "Haji", icon: <Building2 className="w-5 h-5" /> },
+                  ])}
+                  {renderCollapsedSubItems(standaloneMenuItems)}
+                  {renderCollapsedSubItems([
+                    { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-5 h-5" /> },
+                    { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-5 h-5" /> },
+                  ])}
                 </>
               )}
+            </nav>
+          </div>
 
-              {standaloneMenuItems.map((item) => (
+          {/* Pengaturan & Audit */}
+          <div>
+            {!collapsed && (
+              <p className="px-2.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 font-mono">
+                Pengaturan & Audit
+              </p>
+            )}
+            <nav className="space-y-0.5">
+              {adminMenu.map((item) => (
                 <button
                   key={item.id}
                   id={`sidebar-menu-${item.id}`}
                   onClick={() => handleMenuClick(item.id)}
-                  className={menuButtonClass(activeMenu === item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                    isActive(item.id)
+                      ? "bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 font-semibold border border-sky-100 dark:border-sky-900/30 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
+                  }`}
                   title={collapsed ? item.label : ""}
                 >
-                  <span className={activeMenu === item.id ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                  <span className={isActive(item.id) ? "text-sky-600 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"}>
                     {item.icon}
                   </span>
                   {!collapsed && <span>{item.label}</span>}
                 </button>
               ))}
-
-              {/* PENGENDALIAN - Collapsible */}
-              {!collapsed ? (
-                <>
-                  <button
-                    onClick={() => setOpenPengendalian(!openPengendalian)}
-                    className="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-semibold text-sm transition-all cursor-pointer border border-transparent hover:text-slate-900 dark:hover:text-slate-100"
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <Scale className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                      <span>Pengendalian</span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${openPengendalian ? "rotate-180" : ""}`} />
-                  </button>
-
-                  {openPengendalian && (
-                    <div className="pl-6 space-y-1 mt-1">
-                      <button
-                        id="sidebar-menu-rekonsiliasi"
-                        onClick={() => handleMenuClick("rekonsiliasi")}
-                        className={subMenuButtonClass(activeMenu === "rekonsiliasi")}
-                      >
-                        Rekonsiliasi
-                      </button>
-                      <button
-                        id="sidebar-menu-bimtek"
-                        onClick={() => handleMenuClick("bimtek")}
-                        className={subMenuButtonClass(activeMenu === "bimtek")}
-                      >
-                        Bimbingan Teknis
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => handleMenuClick("rekonsiliasi")}
-                    className={menuButtonClass(activeMenu === "rekonsiliasi")}
-                    title="Rekonsiliasi"
-                  >
-                    <Scale className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleMenuClick("bimtek")}
-                    className={menuButtonClass(activeMenu === "bimtek")}
-                    title="Bimbingan Teknis"
-                  >
-                    <GraduationCap className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </nav>
-          </div>
-
-          <div>
-            {!collapsed && (
-              <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-3 font-mono">
-                Pengaturan & Audit
-              </p>
-            )}
-            <nav className="space-y-1">
-              {adminMenu.map((item) => {
-                const isActive = activeMenu === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    id={`sidebar-menu-${item.id}`}
-                    onClick={() => handleMenuClick(item.id)}
-                    className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-lg font-semibold text-sm transition-all cursor-pointer ${
-                      isActive
-                        ? "bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 border border-sky-100 dark:border-sky-900/30 shadow-sm"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 border border-transparent"
-                    }`}
-                    title={collapsed ? item.label : ""}
-                  >
-                    <span className={isActive ? "text-sky-600 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"}>
-                      {item.icon}
-                    </span>
-                    {!collapsed && <span>{item.label}</span>}
-                  </button>
-                );
-              })}
             </nav>
           </div>
         </div>
 
+        {/* Footer */}
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
           <div className="flex items-center justify-between">
             {!collapsed && (

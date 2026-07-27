@@ -200,8 +200,8 @@ export default function App() {
           <DashboardView
             token={token}
             onNavigateToSection={(section, arg) => {
-              if (section === "pengawasan") {
-                setActiveMenu("pengawasan");
+              if (section === "lalu_lintas") {
+                setActiveMenu("lalu_lintas");
               }
             }}
             addToast={addToast}
@@ -209,14 +209,21 @@ export default function App() {
           />
         );
         
+      case "pprp_14_hari":
+      case "pengawasan_pprp":
+      case "lalu_lintas":
+      case "flight_approval":
+      case "pelayanan":
+      case "tarif":
+      case "perintis":
+      case "delay_management":
+      case "haji":
       case "peraturan":
-      case "pengawasan":
+      case "rekonsiliasi":
+      case "bimtek":
       case "rapat":
       case "surat":
       case "nota_dinas":
-      case "pprp":
-      case "lalu_lintas":
-      case "rekonsiliasi":
         return (
           <DocumentManager
             token={token}

@@ -272,7 +272,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h4>
           </div>
           <button
-            onClick={() => onNavigateToSection("pengawasan")}
+            onClick={() => onNavigateToSection("lalu_lintas")}
             className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 hover:underline cursor-pointer"
           >
             <span>Selengkapnya</span>

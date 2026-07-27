@@ -16,6 +16,13 @@ import {
   ChevronDown,
   Mail,
   FilePenLine,
+  FileCheck,
+  Headphones,
+  BadgeDollarSign,
+  Navigation,
+  Clock,
+  Building2,
+  GraduationCap,
 } from "lucide-react";
 import { OtbanLogo } from "./OtbanLogo.js";
 import { ActiveMenu } from "../types.js";
@@ -37,7 +44,6 @@ const standaloneMenuItems: {
   label: string;
   icon: React.ReactNode;
 }[] = [
-  { id: "peraturan", label: "Peraturan", icon: <FolderArchive className="w-5 h-5" /> },
   { id: "rapat", label: "Rapat", icon: <Users className="w-5 h-5" /> },
   { id: "surat", label: "Surat", icon: <Mail className="w-5 h-5" /> },
   { id: "nota_dinas", label: "Nota dinas", icon: <FilePenLine className="w-5 h-5" /> },
@@ -60,6 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const [openPengawasan, setOpenPengawasan] = useState(true);
+  const [openPPRP, setOpenPPRP] = useState(true);
   const [openPengendalian, setOpenPengendalian] = useState(true);
 
   const handleMenuClick = (menu: ActiveMenu) => {
@@ -79,6 +86,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       isActive
         ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+    }`;
+
+  const nestedMenuButtonClass = (isActive: boolean) =>
+    `w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer ${
+      isActive
+        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+        : "text-slate-500 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-700 dark:hover:text-slate-300"
     }`;
 
   return (
@@ -142,6 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {!collapsed ? (
                 <>
+                  {/* PENGAWASAN - Collapsible */}
                   <button
                     onClick={() => setOpenPengawasan(!openPengawasan)}
                     className="w-full flex items-center justify-between px-3.5 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-semibold text-sm transition-all cursor-pointer border border-transparent hover:text-slate-900 dark:hover:text-slate-100"
@@ -155,26 +170,85 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                   {openPengawasan && (
                     <div className="pl-6 space-y-1 mt-1">
+                      {/* PPRP - Nested collapsible */}
                       <button
-                        id="sidebar-menu-pengawasan"
-                        onClick={() => handleMenuClick("pengawasan")}
-                        className={subMenuButtonClass(activeMenu === "pengawasan")}
+                        onClick={() => setOpenPPRP(!openPPRP)}
+                        className="w-full flex items-center justify-between px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-lg font-medium text-sm transition-all cursor-pointer"
                       >
-                        Pengawasan
+                        <div className="flex items-center gap-2.5">
+                          <Compass className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                          <span>PPRP</span>
+                        </div>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openPPRP ? "rotate-180" : ""}`} />
                       </button>
-                      <button
-                        id="sidebar-menu-pprp"
-                        onClick={() => handleMenuClick("pprp")}
-                        className={subMenuButtonClass(activeMenu === "pprp")}
-                      >
-                        PPRP
-                      </button>
+
+                      {openPPRP && (
+                        <div className="pl-5 space-y-0.5 mt-0.5">
+                          <button
+                            id="sidebar-menu-pprp_14_hari"
+                            onClick={() => handleMenuClick("pprp_14_hari")}
+                            className={nestedMenuButtonClass(activeMenu === "pprp_14_hari")}
+                          >
+                            PPRP 14 Hari
+                          </button>
+                          <button
+                            id="sidebar-menu-pengawasan_pprp"
+                            onClick={() => handleMenuClick("pengawasan_pprp")}
+                            className={nestedMenuButtonClass(activeMenu === "pengawasan_pprp")}
+                          >
+                            Pengawasan PPRP
+                          </button>
+                        </div>
+                      )}
+
                       <button
                         id="sidebar-menu-lalu_lintas"
                         onClick={() => handleMenuClick("lalu_lintas")}
                         className={subMenuButtonClass(activeMenu === "lalu_lintas")}
                       >
-                        Lalu Lintas
+                        Lalu Lintas Angkutan Udara
+                      </button>
+                      <button
+                        id="sidebar-menu-flight_approval"
+                        onClick={() => handleMenuClick("flight_approval")}
+                        className={subMenuButtonClass(activeMenu === "flight_approval")}
+                      >
+                        Flight Approval
+                      </button>
+                      <button
+                        id="sidebar-menu-pelayanan"
+                        onClick={() => handleMenuClick("pelayanan")}
+                        className={subMenuButtonClass(activeMenu === "pelayanan")}
+                      >
+                        Pelayanan
+                      </button>
+                      <button
+                        id="sidebar-menu-tarif"
+                        onClick={() => handleMenuClick("tarif")}
+                        className={subMenuButtonClass(activeMenu === "tarif")}
+                      >
+                        Tarif
+                      </button>
+                      <button
+                        id="sidebar-menu-perintis"
+                        onClick={() => handleMenuClick("perintis")}
+                        className={subMenuButtonClass(activeMenu === "perintis")}
+                      >
+                        Perintis
+                      </button>
+                      <button
+                        id="sidebar-menu-delay_management"
+                        onClick={() => handleMenuClick("delay_management")}
+                        className={subMenuButtonClass(activeMenu === "delay_management")}
+                      >
+                        Delay Management
+                      </button>
+                      <button
+                        id="sidebar-menu-haji"
+                        onClick={() => handleMenuClick("haji")}
+                        className={subMenuButtonClass(activeMenu === "haji")}
+                      >
+                        Haji
                       </button>
                     </div>
                   )}
@@ -182,16 +256,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <>
                   <button
-                    onClick={() => handleMenuClick("pengawasan")}
-                    className={menuButtonClass(activeMenu === "pengawasan")}
-                    title="Pengawasan"
+                    onClick={() => handleMenuClick("pprp_14_hari")}
+                    className={menuButtonClass(activeMenu === "pprp_14_hari")}
+                    title="PPRP 14 Hari"
                   >
-                    <ShieldCheck className="w-5 h-5" />
+                    <Compass className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => handleMenuClick("pprp")}
-                    className={menuButtonClass(activeMenu === "pprp")}
-                    title="PPRP"
+                    onClick={() => handleMenuClick("pengawasan_pprp")}
+                    className={menuButtonClass(activeMenu === "pengawasan_pprp")}
+                    title="Pengawasan PPRP"
                   >
                     <Compass className="w-5 h-5" />
                   </button>
@@ -201,6 +275,48 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     title="Lalu Lintas"
                   >
                     <Plane className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("flight_approval")}
+                    className={menuButtonClass(activeMenu === "flight_approval")}
+                    title="Flight Approval"
+                  >
+                    <FileCheck className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("pelayanan")}
+                    className={menuButtonClass(activeMenu === "pelayanan")}
+                    title="Pelayanan"
+                  >
+                    <Headphones className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("tarif")}
+                    className={menuButtonClass(activeMenu === "tarif")}
+                    title="Tarif"
+                  >
+                    <BadgeDollarSign className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("perintis")}
+                    className={menuButtonClass(activeMenu === "perintis")}
+                    title="Perintis"
+                  >
+                    <Navigation className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("delay_management")}
+                    className={menuButtonClass(activeMenu === "delay_management")}
+                    title="Delay Management"
+                  >
+                    <Clock className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("haji")}
+                    className={menuButtonClass(activeMenu === "haji")}
+                    title="Haji"
+                  >
+                    <Building2 className="w-5 h-5" />
                   </button>
                 </>
               )}
@@ -220,6 +336,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               ))}
 
+              {/* PENGENDALIAN - Collapsible */}
               {!collapsed ? (
                 <>
                   <button
@@ -236,23 +353,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {openPengendalian && (
                     <div className="pl-6 space-y-1 mt-1">
                       <button
+                        id="sidebar-menu-peraturan"
+                        onClick={() => handleMenuClick("peraturan")}
+                        className={subMenuButtonClass(activeMenu === "peraturan")}
+                      >
+                        Peraturan
+                      </button>
+                      <button
                         id="sidebar-menu-rekonsiliasi"
                         onClick={() => handleMenuClick("rekonsiliasi")}
                         className={subMenuButtonClass(activeMenu === "rekonsiliasi")}
                       >
                         Rekonsiliasi
                       </button>
+                      <button
+                        id="sidebar-menu-bimtek"
+                        onClick={() => handleMenuClick("bimtek")}
+                        className={subMenuButtonClass(activeMenu === "bimtek")}
+                      >
+                        Bimbingan Teknis
+                      </button>
                     </div>
                   )}
                 </>
               ) : (
-                <button
-                  onClick={() => handleMenuClick("rekonsiliasi")}
-                  className={menuButtonClass(activeMenu === "rekonsiliasi")}
-                  title="Rekonsiliasi"
-                >
-                  <Scale className="w-5 h-5" />
-                </button>
+                <>
+                  <button
+                    onClick={() => handleMenuClick("peraturan")}
+                    className={menuButtonClass(activeMenu === "peraturan")}
+                    title="Peraturan"
+                  >
+                    <FolderArchive className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("rekonsiliasi")}
+                    className={menuButtonClass(activeMenu === "rekonsiliasi")}
+                    title="Rekonsiliasi"
+                  >
+                    <Scale className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => handleMenuClick("bimtek")}
+                    className={menuButtonClass(activeMenu === "bimtek")}
+                    title="Bimbingan Teknis"
+                  >
+                    <GraduationCap className="w-5 h-5" />
+                  </button>
+                </>
               )}
             </nav>
           </div>

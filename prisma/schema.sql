@@ -75,14 +75,21 @@ VALUES (uuid_generate_v4(), 'Admin OTBAN X', 'angud2026', 'otban10')
 ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO jenis_arsip (nama_jenis) VALUES 
-('Pengawasan'),
+('PPRP 14 Hari'),
+('Pengawasan PPRP'),
+('Lalu Lintas'),
+('Flight Approval'),
+('Pelayanan'),
+('Tarif'),
+('Perintis'),
+('Delay Management'),
+('Haji'),
 ('Peraturan'),
+('Rekonsiliasi'),
+('Bimbingan Teknis'),
 ('Rapat'),
 ('Surat'),
-('Nota dinas'),
-('PPRP'),
-('Lalu Lintas'),
-('Rekonsiliasi')
+('Nota dinas')
 ON CONFLICT (nama_jenis) DO NOTHING;
 
 INSERT INTO bandar_udara (nama_bandara) VALUES 

@@ -14,14 +14,21 @@ async function main() {
   });
 
   const jenisArsip = [
-    "Pengawasan",
+    "PPRP 14 Hari",
+    "Pengawasan PPRP",
+    "Lalu Lintas",
+    "Flight Approval",
+    "Pelayanan",
+    "Tarif",
+    "Perintis",
+    "Delay Management",
+    "Haji",
     "Peraturan",
+    "Rekonsiliasi",
+    "Bimbingan Teknis",
     "Rapat",
     "Surat",
     "Nota dinas",
-    "PPRP",
-    "Lalu Lintas",
-    "Rekonsiliasi",
   ];
 
   for (const nama of jenisArsip) {

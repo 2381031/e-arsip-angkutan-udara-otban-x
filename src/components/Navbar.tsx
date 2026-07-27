@@ -61,22 +61,36 @@ export const Navbar: React.FC<NavbarProps> = ({
     switch (menu) {
       case "dashboard":
         return "Dashboard";
-      case "pengawasan":
-        return "Pengawasan Dokumen";
+      case "pprp_14_hari":
+        return "PPRP 14 Hari";
+      case "pengawasan_pprp":
+        return "Pengawasan PPRP";
+      case "lalu_lintas":
+        return "Lalu Lintas Angkutan Udara";
+      case "flight_approval":
+        return "Flight Approval";
+      case "pelayanan":
+        return "Pelayanan";
+      case "tarif":
+        return "Tarif";
+      case "perintis":
+        return "Perintis";
+      case "delay_management":
+        return "Delay Management";
+      case "haji":
+        return "Haji";
       case "peraturan":
         return "Arsip Peraturan";
+      case "rekonsiliasi":
+        return "Rekonsiliasi Angkutan";
+      case "bimtek":
+        return "Bimbingan Teknis";
       case "rapat":
         return "Notulen Rapat";
       case "surat":
         return "Arsip Surat";
       case "nota_dinas":
         return "Nota Dinas";
-      case "pprp":
-        return "Program PPRP";
-      case "lalu_lintas":
-        return "Lalu Lintas Udara";
-      case "rekonsiliasi":
-        return "Rekonsiliasi Angkutan";
       case "airports":
         return "Manajemen Bandar Udara";
       case "admins":

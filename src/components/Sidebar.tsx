@@ -52,9 +52,12 @@ const standaloneMenuItems: MenuItem[] = [
   { id: "nota_dinas", label: "Nota dinas", icon: <FilePenLine className="w-5 h-5" /> },
 ];
 
-const pengawasanSubItems: MenuItem[] = [
+const pprpSubItems: MenuItem[] = [
   { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: <Compass className="w-3.5 h-3.5" /> },
   { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: <Compass className="w-3.5 h-3.5" /> },
+];
+
+const pengawasanDirectItems: MenuItem[] = [
   { id: "lalu_lintas", label: "Lalu Lintas Angkutan Udara", icon: <Plane className="w-3.5 h-3.5" /> },
   { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-3.5 h-3.5" /> },
   { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-3.5 h-3.5" /> },
@@ -86,6 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const [openPengawasan, setOpenPengawasan] = useState(true);
+  const [openPPRP, setOpenPPRP] = useState(true);
   const [openPengendalian, setOpenPengendalian] = useState(true);
 
   const handleMenuClick = (menu: ActiveMenu) => {
@@ -95,7 +99,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (menu: ActiveMenu) => activeMenu === menu;
 
-  const isPengawasanActive = pengawasanSubItems.some((i) => isActive(i.id));
+  const allPengawasanItems = [...pprpSubItems, ...pengawasanDirectItems];
+  const isPengawasanActive = allPengawasanItems.some((i) => isActive(i.id));
+  const isPPRPActive = pprpSubItems.some((i) => isActive(i.id));
   const isPengendalianActive = pengendalianSubItems.some((i) => isActive(i.id));
 
   // ─── Top-level item style ──────────────────────────────────
@@ -243,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
                             : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
                         }`}>
-                          {pengawasanSubItems.length}
+                          {allPengawasanItems.length}
                         </span>
                         <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengawasan ? "rotate-180" : ""}`} />
                       </div>
@@ -251,7 +257,62 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {openPengawasan && (
                       <div className="space-y-0.5 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-5">
-                        {renderSubItems(pengawasanSubItems)}
+                        {/* PPRP sub-group (nested collapsible) */}
+                        <div className="mt-0.5">
+                          <button
+                            onClick={() => setOpenPPRP(!openPPRP)}
+                            className={`w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 rounded-md text-[13px] font-bold transition-all cursor-pointer border-l-2 ${
+                              isPPRPActive
+                                ? "text-emerald-700 dark:text-emerald-400 border-l-emerald-400"
+                                : openPPRP
+                                  ? "text-slate-700 dark:text-slate-300 border-l-slate-300 dark:border-l-slate-600"
+                                  : "text-slate-500 dark:text-slate-400 border-l-transparent hover:border-l-slate-300 dark:hover:border-l-slate-600"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Compass className="w-3.5 h-3.5" />
+                              <span>PPRP</span>
+                            </div>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openPPRP ? "rotate-180" : ""}`} />
+                          </button>
+
+                          {openPPRP && (
+                            <div className="space-y-0.5 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-4">
+                              {pprpSubItems.map((item) => (
+                                <button
+                                  key={item.id}
+                                  id={`sidebar-menu-${item.id}`}
+                                  onClick={() => handleMenuClick(item.id)}
+                                  className={`w-full flex items-center gap-2 pl-6 pr-3 py-1.5 rounded-md text-[12px] transition-all cursor-pointer border-l-2 ${
+                                    isActive(item.id)
+                                      ? "bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-medium border-l-emerald-500"
+                                      : "text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-600 dark:hover:text-slate-300 border-l-transparent hover:border-l-slate-300 dark:hover:border-l-slate-600"
+                                  }`}
+                                >
+                                  <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                                    {item.icon}
+                                  </span>
+                                  <span className="truncate">{item.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Direct items under Pengawasan */}
+                        {pengawasanDirectItems.map((item) => (
+                          <button
+                            key={item.id}
+                            id={`sidebar-menu-${item.id}`}
+                            onClick={() => handleMenuClick(item.id)}
+                            className={subItemClass(isActive(item.id))}
+                          >
+                            <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                              {item.icon}
+                            </span>
+                            <span className="truncate">{item.label}</span>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -315,10 +376,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     { id: "delay_management", label: "Delay Management", icon: <Clock className="w-5 h-5" /> },
                     { id: "haji", label: "Haji", icon: <Building2 className="w-5 h-5" /> },
                   ])}
+                  <div className="border-t border-slate-200 dark:border-slate-700 my-1 mx-2" />
                   {renderCollapsedSubItems([
                     { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-5 h-5" /> },
                     { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-5 h-5" /> },
                   ])}
+                  <div className="border-t border-slate-200 dark:border-slate-700 my-1 mx-2" />
                   {renderCollapsedSubItems(standaloneMenuItems)}
                 </>
               )}

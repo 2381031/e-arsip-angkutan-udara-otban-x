@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case "haji":
         return "Haji";
       case "peraturan":
-        return "Arsip Peraturan";
+        return "Peraturan";
       case "rekonsiliasi":
         return "Rekonsiliasi Angkutan";
       case "bimtek":
@@ -88,7 +88,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       case "rapat":
         return "Notulen Rapat";
       case "surat":
-        return "Arsip Surat";
+        return "Surat";
       case "nota_dinas":
         return "Nota Dinas";
       case "airports":

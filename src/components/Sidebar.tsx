@@ -49,7 +49,7 @@ const standaloneMenuItems: MenuItem[] = [
   { id: "peraturan", label: "Peraturan", icon: <FolderArchive className="w-5 h-5" /> },
   { id: "rapat", label: "Rapat", icon: <Users className="w-5 h-5" /> },
   { id: "surat", label: "Surat", icon: <Mail className="w-5 h-5" /> },
-  { id: "nota_dinas", label: "Nota dinas", icon: <FilePenLine className="w-5 h-5" /> },
+  { id: "nota_dinas", label: "Nota Dinas", icon: <FilePenLine className="w-5 h-5" /> },
 ];
 
 const pprpSubItems: MenuItem[] = [

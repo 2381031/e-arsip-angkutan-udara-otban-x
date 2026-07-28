@@ -53,20 +53,20 @@ const standaloneMenuItems: MenuItem[] = [
 ];
 
 const pengawasanSubItems: MenuItem[] = [
-  { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: <Compass className="w-4 h-4" /> },
-  { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: <Compass className="w-4 h-4" /> },
-  { id: "lalu_lintas", label: "Lalu Lintas Angkutan Udara", icon: <Plane className="w-4 h-4" /> },
-  { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-4 h-4" /> },
-  { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-4 h-4" /> },
-  { id: "tarif", label: "Tarif", icon: <BadgeDollarSign className="w-4 h-4" /> },
-  { id: "perintis", label: "Perintis", icon: <Navigation className="w-4 h-4" /> },
-  { id: "delay_management", label: "Delay Management", icon: <Clock className="w-4 h-4" /> },
-  { id: "haji", label: "Haji", icon: <Building2 className="w-4 h-4" /> },
+  { id: "pprp_14_hari", label: "PPRP 14 Hari", icon: <Compass className="w-3.5 h-3.5" /> },
+  { id: "pengawasan_pprp", label: "Pengawasan PPRP", icon: <Compass className="w-3.5 h-3.5" /> },
+  { id: "lalu_lintas", label: "Lalu Lintas Angkutan Udara", icon: <Plane className="w-3.5 h-3.5" /> },
+  { id: "flight_approval", label: "Flight Approval", icon: <FileCheck className="w-3.5 h-3.5" /> },
+  { id: "pelayanan", label: "Pelayanan", icon: <Headphones className="w-3.5 h-3.5" /> },
+  { id: "tarif", label: "Tarif", icon: <BadgeDollarSign className="w-3.5 h-3.5" /> },
+  { id: "perintis", label: "Perintis", icon: <Navigation className="w-3.5 h-3.5" /> },
+  { id: "delay_management", label: "Delay Management", icon: <Clock className="w-3.5 h-3.5" /> },
+  { id: "haji", label: "Haji", icon: <Building2 className="w-3.5 h-3.5" /> },
 ];
 
 const pengendalianSubItems: MenuItem[] = [
-  { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-4 h-4" /> },
-  { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-4 h-4" /> },
+  { id: "rekonsiliasi", label: "Rekonsiliasi", icon: <Scale className="w-3.5 h-3.5" /> },
+  { id: "bimtek", label: "Bimbingan Teknis", icon: <GraduationCap className="w-3.5 h-3.5" /> },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -95,6 +95,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (menu: ActiveMenu) => activeMenu === menu;
 
+  const isPengawasanActive = pengawasanSubItems.some((i) => isActive(i.id));
+  const isPengendalianActive = pengendalianSubItems.some((i) => isActive(i.id));
+
+  // ─── Top-level item style ──────────────────────────────────
+
   const topItemClass = (active: boolean) =>
     `w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer ${
       active
@@ -102,19 +107,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100 font-medium border border-transparent"
     }`;
 
+  // ─── Sub-item style (inside collapsible group) ─────────────
+
   const subItemClass = (active: boolean) =>
-    `w-full flex items-center gap-2.5 pl-4 pr-3 py-1.5 rounded-lg text-sm transition-all cursor-pointer ${
+    `w-full flex items-center gap-2 pl-8 pr-3 py-1.5 rounded-md text-[13px] transition-all cursor-pointer border-l-2 ${
       active
-        ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-medium"
-        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-800 dark:hover:text-slate-200 font-medium"
+        ? "bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-medium border-l-emerald-500"
+        : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:hover:text-slate-300 border-l-transparent hover:border-l-slate-300 dark:hover:border-l-slate-600"
     }`;
 
-  const collapseBtnClass = (open: boolean) =>
-    `w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+  // ─── Collapsible group header style ────────────────────────
+
+  const collapseBtnClass = (open: boolean, hasActiveChild: boolean) =>
+    `w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
       open
-        ? "text-slate-800 dark:text-slate-200"
-        : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
+        ? hasActiveChild
+          ? "text-emerald-700 dark:text-emerald-400"
+          : "text-slate-800 dark:text-slate-200"
+        : hasActiveChild
+          ? "text-emerald-600 dark:text-emerald-400"
+          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100"
     } border border-transparent hover:border-slate-200 dark:hover:border-slate-700`;
+
+  // ─── Render sub-items (inside collapsible) ─────────────────
 
   const renderSubItems = (items: MenuItem[]) => {
     return items.map((item) => (
@@ -124,11 +139,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => handleMenuClick(item.id)}
         className={subItemClass(isActive(item.id))}
       >
-        {item.icon && <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>{item.icon}</span>}
-        <span>{item.label}</span>
+        <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+          {item.icon}
+        </span>
+        <span className="truncate">{item.label}</span>
       </button>
     ));
   };
+
+  // ─── Render collapsed sub-items ────────────────────────────
 
   const renderCollapsedSubItems = (items: MenuItem[]) => {
     return items.map((item) => (
@@ -209,55 +228,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!collapsed ? (
                 <>
                   {/* PENGAWASAN */}
-                  <button
-                    onClick={() => setOpenPengawasan(!openPengawasan)}
-                    className={collapseBtnClass(openPengawasan)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <ShieldCheck className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                      <span>Pengawasan</span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengawasan ? "rotate-180" : ""}`} />
-                  </button>
+                  <div className="mt-1 bg-slate-50/60 dark:bg-slate-800/20 rounded-lg p-1.5">
+                    <button
+                      onClick={() => setOpenPengawasan(!openPengawasan)}
+                      className={collapseBtnClass(openPengawasan, isPengawasanActive)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <ShieldCheck className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Pengawasan</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          isPengawasanActive
+                            ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                        }`}>
+                          {pengawasanSubItems.length}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengawasan ? "rotate-180" : ""}`} />
+                      </div>
+                    </button>
 
-                  {openPengawasan && (
-                    <div className="space-y-0.5 mt-0.5">
-                      {renderSubItems(pengawasanSubItems)}
-                    </div>
-                  )}
+                    {openPengawasan && (
+                      <div className="space-y-0.5 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-5">
+                        {renderSubItems(pengawasanSubItems)}
+                      </div>
+                    )}
+                  </div>
 
                   {/* PENGENDALIAN */}
-                  <button
-                    onClick={() => setOpenPengendalian(!openPengendalian)}
-                    className={collapseBtnClass(openPengendalian)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Scale className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                      <span>Pengendalian</span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengendalian ? "rotate-180" : ""}`} />
-                  </button>
+                  <div className="mt-1 bg-slate-50/60 dark:bg-slate-800/20 rounded-lg p-1.5">
+                    <button
+                      onClick={() => setOpenPengendalian(!openPengendalian)}
+                      className={collapseBtnClass(openPengendalian, isPengendalianActive)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Scale className="w-4.5 h-4.5 text-slate-400 dark:text-slate-500" />
+                        <span>Pengendalian</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                          isPengendalianActive
+                            ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                        }`}>
+                          {pengendalianSubItems.length}
+                        </span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPengendalian ? "rotate-180" : ""}`} />
+                      </div>
+                    </button>
 
-                  {openPengendalian && (
-                    <div className="space-y-0.5 mt-0.5">
-                      {renderSubItems(pengendalianSubItems)}
-                    </div>
-                  )}
+                    {openPengendalian && (
+                      <div className="space-y-0.5 mt-0.5 border-l-2 border-slate-200 dark:border-slate-700 ml-5">
+                        {renderSubItems(pengendalianSubItems)}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Standalone items */}
-                  {standaloneMenuItems.map((item) => (
-                    <button
-                      key={item.id}
-                      id={`sidebar-menu-${item.id}`}
-                      onClick={() => handleMenuClick(item.id)}
-                      className={topItemClass(isActive(item.id))}
-                    >
-                      <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
-                        {item.icon}
-                      </span>
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
+                  <div className="mt-1 space-y-0.5">
+                    {standaloneMenuItems.map((item) => (
+                      <button
+                        key={item.id}
+                        id={`sidebar-menu-${item.id}`}
+                        onClick={() => handleMenuClick(item.id)}
+                        className={topItemClass(isActive(item.id))}
+                      >
+                        <span className={isActive(item.id) ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
+                          {item.icon}
+                        </span>
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </>
               ) : (
                 <>

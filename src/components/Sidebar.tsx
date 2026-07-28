@@ -261,19 +261,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <div className="mt-0.5">
                           <button
                             onClick={() => setOpenPPRP(!openPPRP)}
-                            className={`w-full flex items-center justify-between gap-2 pl-4 pr-3 py-1.5 rounded-md text-[13px] font-bold transition-all cursor-pointer border-l-2 ${
+                            className={`w-full flex items-center gap-2 pl-8 pr-3 py-1.5 rounded-md text-[13px] transition-all cursor-pointer border-l-2 ${
                               isPPRPActive
-                                ? "text-emerald-700 dark:text-emerald-400 border-l-emerald-400"
-                                : openPPRP
-                                  ? "text-slate-700 dark:text-slate-300 border-l-slate-300 dark:border-l-slate-600"
-                                  : "text-slate-500 dark:text-slate-400 border-l-transparent hover:border-l-slate-300 dark:hover:border-l-slate-600"
+                                ? "bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-medium border-l-emerald-500"
+                                : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 hover:text-slate-700 dark:hover:text-slate-300 border-l-transparent hover:border-l-slate-300 dark:hover:border-l-slate-600"
                             }`}
                           >
-                            <div className="flex items-center gap-2">
+                            <span className={isPPRPActive ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"}>
                               <Compass className="w-3.5 h-3.5" />
-                              <span>PPRP</span>
-                            </div>
-                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${openPPRP ? "rotate-180" : ""}`} />
+                            </span>
+                            <span className="truncate flex-1 text-left">PPRP</span>
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${openPPRP ? "rotate-180" : ""}`} />
                           </button>
 
                           {openPPRP && (

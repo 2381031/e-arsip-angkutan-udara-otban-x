@@ -270,10 +270,18 @@ export const dbService = {
   // Jenis Arsip (Kategori)
   async getJenisArsip(): Promise<JenisArsip[]> {
     await ensureJenisArsipSynced();
-    const list = await prisma.jenisArsip.findMany({
-      orderBy: { namaJenis: "asc" },
-    });
-    return list.map(mapJenisArsip);
+    const list = await prisma.jenisArsip.findMany();
+    const menuIndex = new Map(ARCHIVE_CATEGORIES.map((c, i) => [c.nama.toLowerCase(), i]));
+    return list
+      .map(mapJenisArsip)
+      .sort((a, b) => {
+        const ia = menuIndex.get(a.nama_jenis.toLowerCase());
+        const ib = menuIndex.get(b.nama_jenis.toLowerCase());
+        if (ia === undefined && ib === undefined) return a.nama_jenis.localeCompare(b.nama_jenis);
+        if (ia === undefined) return 1;
+        if (ib === undefined) return -1;
+        return ia - ib;
+      });
   },
 
   // Dokumen

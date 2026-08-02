@@ -1,28 +1,33 @@
 import { ActiveMenu, JenisArsip } from "../types.js";
 
+export type ArchiveGroup = "Pengawasan" | "Pengendalian" | "Lainnya";
+
+export const ARCHIVE_GROUP_ORDER: ArchiveGroup[] = ["Pengawasan", "Pengendalian", "Lainnya"];
+
 export interface ArchiveCategoryDef {
   menu: ActiveMenu;
   nama: string;
+  group: ArchiveGroup;
 }
 
 // Single source of truth: every archive menu in the sidebar has exactly one
 // JenisArsip row. Adding/removing a menu here keeps the jenis arsip list in sync.
 export const ARCHIVE_CATEGORIES: ArchiveCategoryDef[] = [
-  { menu: "pprp_14_hari", nama: "PPRP 14 Hari" },
-  { menu: "pengawasan_pprp", nama: "Pengawasan PPRP" },
-  { menu: "lalu_lintas", nama: "Lalu Lintas" },
-  { menu: "flight_approval", nama: "Flight Approval" },
-  { menu: "pelayanan", nama: "Pelayanan" },
-  { menu: "tarif", nama: "Tarif" },
-  { menu: "perintis", nama: "Perintis" },
-  { menu: "delay_management", nama: "Delay Management" },
-  { menu: "haji", nama: "Haji" },
-  { menu: "rekonsiliasi", nama: "Rekonsiliasi" },
-  { menu: "bimtek", nama: "Bimbingan Teknis" },
-  { menu: "peraturan", nama: "Peraturan" },
-  { menu: "rapat", nama: "Rapat" },
-  { menu: "surat", nama: "Surat" },
-  { menu: "nota_dinas", nama: "Nota Dinas" },
+  { menu: "pprp_14_hari", nama: "PPRP 14 Hari", group: "Pengawasan" },
+  { menu: "pengawasan_pprp", nama: "Pengawasan PPRP", group: "Pengawasan" },
+  { menu: "lalu_lintas", nama: "Lalu Lintas", group: "Pengawasan" },
+  { menu: "flight_approval", nama: "Flight Approval", group: "Pengawasan" },
+  { menu: "pelayanan", nama: "Pelayanan", group: "Pengawasan" },
+  { menu: "tarif", nama: "Tarif", group: "Pengawasan" },
+  { menu: "perintis", nama: "Perintis", group: "Pengawasan" },
+  { menu: "delay_management", nama: "Delay Management", group: "Pengawasan" },
+  { menu: "haji", nama: "Haji", group: "Pengawasan" },
+  { menu: "rekonsiliasi", nama: "Rekonsiliasi", group: "Pengendalian" },
+  { menu: "bimtek", nama: "Bimbingan Teknis", group: "Pengendalian" },
+  { menu: "peraturan", nama: "Peraturan", group: "Lainnya" },
+  { menu: "rapat", nama: "Rapat", group: "Lainnya" },
+  { menu: "surat", nama: "Surat", group: "Lainnya" },
+  { menu: "nota_dinas", nama: "Nota Dinas", group: "Lainnya" },
 ];
 
 export function categoryNameToSlug(name: string): string {

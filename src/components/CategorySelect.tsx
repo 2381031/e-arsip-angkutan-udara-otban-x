@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check } from "lucide-react";
 import { JenisArsip } from "../types.js";
-import { sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import {
+  ARCHIVE_CATEGORIES,
+  ARCHIVE_GROUP_ORDER,
+  categoryNameToSlug,
+} from "../utils/archiveCategories.js";
 
 interface CategorySelectProps {
   value: string;
@@ -11,6 +15,8 @@ interface CategorySelectProps {
   disabled?: boolean;
 }
 
+// Group kategori mengikuti struktur menu sidebar (Pengawasan, Pengendalian, lainnya).
+// Hanya kategori yang ada di daftar menu yang ditampilkan (kategori lama diabaikan).
 export const CategorySelect: React.FC<CategorySelectProps> = ({
   value,
   onChange,
@@ -21,8 +27,14 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const sorted = sortCategoriesByMenu(categories);
-  const selected = sorted.find((c) => c.id === value);
+  const selected = categories.find((c) => c.id === value);
+
+  const groups = ARCHIVE_GROUP_ORDER.map((group) => ({
+    group,
+    items: ARCHIVE_CATEGORIES.filter((d) => d.group === group)
+      .map((d) => categories.find((c) => categoryNameToSlug(c.nama_jenis) === categoryNameToSlug(d.nama)))
+      .filter((c): c is JenisArsip => !!c),
+  }));
 
   useEffect(() => {
     if (!open) return;
@@ -58,20 +70,29 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
 
       {open && (
         <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-56 overflow-y-auto">
-          {sorted.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => selectOption(c.id)}
-              className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition cursor-pointer ${
-                c.id === value
-                  ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-semibold"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-              }`}
-            >
-              <span className="truncate">{c.nama_jenis}</span>
-              {c.id === value && <Check className="w-4 h-4 shrink-0" />}
-            </button>
+          {groups.map(({ group, items }) => (
+            <div key={group}>
+              {group !== "Lainnya" && (
+                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                  {group}
+                </div>
+              )}
+              {items.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => selectOption(c.id)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 text-sm text-left transition cursor-pointer ${
+                    c.id === value
+                      ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-semibold"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                  }`}
+                >
+                  <span className="truncate">{c.nama_jenis}</span>
+                  {c.id === value && <Check className="w-4 h-4 shrink-0" />}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

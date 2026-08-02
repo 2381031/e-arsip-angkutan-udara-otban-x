@@ -271,17 +271,11 @@ export const dbService = {
   async getJenisArsip(): Promise<JenisArsip[]> {
     await ensureJenisArsipSynced();
     const list = await prisma.jenisArsip.findMany();
-    const menuIndex = new Map(ARCHIVE_CATEGORIES.map((c, i) => [c.nama.toLowerCase(), i]));
-    return list
-      .map(mapJenisArsip)
-      .sort((a, b) => {
-        const ia = menuIndex.get(a.nama_jenis.toLowerCase());
-        const ib = menuIndex.get(b.nama_jenis.toLowerCase());
-        if (ia === undefined && ib === undefined) return a.nama_jenis.localeCompare(b.nama_jenis);
-        if (ia === undefined) return 1;
-        if (ib === undefined) return -1;
-        return ia - ib;
-      });
+    const byNama = new Map(list.map((j) => [j.namaJenis, j]));
+    // Hanya kategori yang sesuai menu, dalam urutan menu sidebar (atas ke bawah).
+    return ARCHIVE_CATEGORIES.map((def) => byNama.get(def.nama))
+      .filter((j): j is NonNullable<typeof j> => !!j)
+      .map(mapJenisArsip);
   },
 
   // Dokumen
@@ -421,12 +415,18 @@ export const dbService = {
       ? (docsByYearRaw.find(y => y.tahunId === currentTahun.tahun)?._count.id || 0)
       : 0;
 
-    // Map docsByCategoryRaw
+    // Map docsByCategoryRaw (hanya kategori yang sesuai menu)
     const catMap = new Map(categories.map(c => [c.id, c.namaJenis]));
-    const docsByCategory = docsByCategoryRaw.map(d => ({
-      name: catMap.get(d.jenisArsipId) || "Unknown",
-      value: d._count.id,
-    }));
+    const menuNames = new Set(ARCHIVE_CATEGORIES.map(c => c.nama.toLowerCase()));
+    const docsByCategory = docsByCategoryRaw
+      .filter(d => {
+        const name = (catMap.get(d.jenisArsipId) || "").toLowerCase();
+        return name && menuNames.has(name);
+      })
+      .map(d => ({
+        name: catMap.get(d.jenisArsipId) || "Unknown",
+        value: d._count.id,
+      }));
 
     // Map docsByYearRaw
     const yearMap = new Map(years.map(y => [y.id, y.tahun]));

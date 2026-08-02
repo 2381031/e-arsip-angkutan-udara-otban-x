@@ -27,7 +27,7 @@ import {
   isPdfFile,
   logDocumentDownload,
 } from "../utils/documentFile.js";
-import { findCategoryForMenu } from "../utils/archiveCategories.js";
+import { findCategoryForMenu, sortCategoriesByMenu } from "../utils/archiveCategories.js";
 
 interface DocumentManagerProps {
   token: string;
@@ -93,7 +93,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       ]);
       if (resB.ok) setAirports(await resB.json());
       if (resY.ok) setYears(await resY.json());
-      if (resC.ok) setCategories(await resC.json());
+      if (resC.ok) setCategories(sortCategoriesByMenu(await resC.json()));
     } catch (err) {
       console.error("Failed to load options", err);
     }

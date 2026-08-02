@@ -25,6 +25,7 @@ import {
   Legend
 } from "recharts";
 import { DashboardMetrics, Dokumen } from "../types.js";
+import { sortCategoryItemsByMenu } from "../utils/archiveCategories.js";
 import {
   downloadDocument,
   getFileExtension,
@@ -125,6 +126,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     },
   ];
 
+  const docsByCategorySorted = sortCategoryItemsByMenu(metrics?.docsByCategory || []);
+
   return (
     <div className="space-y-8 animate-fade-in">
       
@@ -213,7 +216,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={metrics?.docsByCategory || []}
+                    data={docsByCategorySorted}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -221,7 +224,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {(metrics?.docsByCategory || []).map((entry, index) => (
+                    {docsByCategorySorted.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -240,7 +243,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             
             {/* Custom Legend for Categories */}
             <div className="w-full md:w-1/2 flex flex-col gap-2.5 mt-4 md:mt-0 px-4">
-              {(metrics?.docsByCategory || []).map((entry, index) => (
+              {docsByCategorySorted.map((entry, index) => (
                 <div key={index} className="flex items-center justify-between text-xs font-semibold">
                   <div className="flex items-center gap-2">
                     <span

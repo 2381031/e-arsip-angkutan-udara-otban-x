@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plane, Calendar, ChevronRight, Folder, MapPin, ArrowLeft, Plus, X, Upload } from "lucide-react";
 import { BandarUdara, Tahun, ActiveMenu, JenisArsip } from "../types.js";
-import { findCategoryForMenu } from "../utils/archiveCategories.js";
+import { findCategoryForMenu, sortCategoriesByMenu } from "../utils/archiveCategories.js";
 
 interface AirportSelectorProps {
   token: string;
@@ -54,7 +54,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
 
       setAirports(dataB);
       setYears(dataY);
-      setCategories(dataC);
+      setCategories(sortCategoriesByMenu(dataC));
     } catch (err: any) {
       addToast(err.message || "Gagal memuat data dari database", "error");
     } finally {

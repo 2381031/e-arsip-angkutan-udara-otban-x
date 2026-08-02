@@ -29,6 +29,34 @@ export function categoryNameToSlug(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, "_");
 }
 
+const menuIndexBySlug: Map<string, number> = new Map(
+  ARCHIVE_CATEGORIES.map((c, i) => [categoryNameToSlug(c.nama), i])
+);
+
+// Sort a kategori list to follow the sidebar menu order (atas ke bawah).
+export function sortCategoriesByMenu(categories: JenisArsip[]): JenisArsip[] {
+  return [...categories].sort((a, b) => {
+    const ia = menuIndexBySlug.get(categoryNameToSlug(a.nama_jenis));
+    const ib = menuIndexBySlug.get(categoryNameToSlug(b.nama_jenis));
+    if (ia === undefined && ib === undefined) return a.nama_jenis.localeCompare(b.nama_jenis);
+    if (ia === undefined) return 1;
+    if (ib === undefined) return -1;
+    return ia - ib;
+  });
+}
+
+// Sort items keyed by a category name (e.g. dashboard { name, value }) into menu order.
+export function sortCategoryItemsByMenu<T extends { name: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const ia = menuIndexBySlug.get(categoryNameToSlug(a.name));
+    const ib = menuIndexBySlug.get(categoryNameToSlug(b.name));
+    if (ia === undefined && ib === undefined) return a.name.localeCompare(b.name);
+    if (ia === undefined) return 1;
+    if (ib === undefined) return -1;
+    return ia - ib;
+  });
+}
+
 export function findCategoryForMenu(
   categories: JenisArsip[],
   menu: ActiveMenu

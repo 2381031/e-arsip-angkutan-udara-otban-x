@@ -28,6 +28,7 @@ import {
   logDocumentDownload,
 } from "../utils/documentFile.js";
 import { findCategoryForMenu, menuToDisplayName, sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import { getOptions, getYearCounts, invalidateDataCache } from "../utils/apiCache.js";
 import { CategorySelect } from "./CategorySelect.js";
 
 interface DocumentManagerProps {
@@ -84,17 +85,13 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Fetch helper lists (Airports, Years, Categories)
+  // Fetch helper lists (Airports, Years, Categories) - satu panggilan, di-cache
   const fetchHelpers = async () => {
     try {
-      const [resB, resY, resC] = await Promise.all([
-        fetch("/api/bandara", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/tahun", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/jenis-arsip", { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (resB.ok) setAirports(await resB.json());
-      if (resY.ok) setYears(await resY.json());
-      if (resC.ok) setCategories(sortCategoriesByMenu(await resC.json()));
+      const data = await getOptions(token);
+      setAirports(data.bandara);
+      setYears(data.tahun);
+      setCategories(sortCategoriesByMenu(data.jenis_arsip));
     } catch (err) {
       console.error("Failed to load options", err);
     }
@@ -104,16 +101,9 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   const fetchYearCounts = async () => {
     try {
       const activeCatObj = findCategoryForMenu(categories, activeCategory);
-      let url = "/api/dokumen/year-counts";
-      if (activeCatObj) url += `?jenis_arsip_id=${activeCatObj.id}`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setYearCounts(data);
-      }
+      if (!activeCatObj) return;
+      const counts = await getYearCounts(token, activeCatObj.id);
+      setYearCounts(counts);
     } catch (err) {
       console.error("Failed to compute year folder counts", err);
     }
@@ -169,13 +159,17 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
   // Refetch when helper lists, scoped details, activeCategory, or page switches
   useEffect(() => {
-    if (categories.length > 0) {
-      fetchYearCounts();
-      if (selectedYear) {
-        fetchDocuments();
-      }
+    if (categories.length > 0 && selectedYear) {
+      fetchDocuments();
     }
   }, [categories, activeCategory, selectedYear, page]);
+
+  // Year folder counts hanya bergantung pada kategori, bukan tahun/page.
+  useEffect(() => {
+    if (categories.length > 0) {
+      fetchYearCounts();
+    }
+  }, [categories, activeCategory]);
 
   // Sync breadcrumbs with parents
   useEffect(() => {
@@ -332,6 +326,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
       setIsUploadModalOpen(false);
       setUploadProgress(0);
 
+      invalidateDataCache();
       await fetchHelpers();
 
       if (!selectedYear) {
@@ -385,6 +380,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
       addToast("Metadata dokumen berhasil diperbarui!", "success");
       setIsEditModalOpen(false);
+      invalidateDataCache();
       await fetchHelpers();
       fetchYearCounts();
       if (selectedYear) {
@@ -410,6 +406,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
       addToast("Dokumen berhasil dihapus dari sistem.", "success");
       setIsDeleteModalOpen(false);
+      invalidateDataCache();
       await fetchHelpers();
       fetchYearCounts();
       if (selectedYear) {

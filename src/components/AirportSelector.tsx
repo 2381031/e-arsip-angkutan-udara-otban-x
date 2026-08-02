@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Plane, Calendar, ChevronRight, Folder, MapPin, ArrowLeft, Plus, X, Upload } from "lucide-react";
 import { BandarUdara, Tahun, ActiveMenu, JenisArsip } from "../types.js";
 import { findCategoryForMenu, menuToDisplayName, sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import { getOptions, invalidateDataCache } from "../utils/apiCache.js";
 import { CategorySelect } from "./CategorySelect.js";
 
 interface AirportSelectorProps {
@@ -35,27 +36,14 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
   const [formFile, setFormFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch initial airport, year, and category listings
+  // Fetch initial airport, year, and category listings - satu panggilan, di-cache
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resB, resY, resC] = await Promise.all([
-        fetch("/api/bandara", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/tahun", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/jenis-arsip", { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-
-      const dataB = await resB.json();
-      const dataY = await resY.json();
-      const dataC = await resC.json();
-
-      if (!resB.ok) throw new Error(dataB.message || "Failed to load airports");
-      if (!resY.ok) throw new Error(dataY.message || "Failed to load years");
-      if (!resC.ok) throw new Error(dataC.message || "Failed to load categories");
-
-      setAirports(dataB);
-      setYears(dataY);
-      setCategories(sortCategoriesByMenu(dataC));
+      const data = await getOptions(token);
+      setAirports(data.bandara);
+      setYears(data.tahun);
+      setCategories(sortCategoriesByMenu(data.jenis_arsip));
     } catch (err: any) {
       addToast(err.message || "Gagal memuat data dari database", "error");
     } finally {
@@ -130,6 +118,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
 
       addToast("Dokumen berhasil diunggah, direktori tahun otomatis dibuat!", "success");
       setIsUploadModalOpen(false);
+      invalidateDataCache();
       // Refresh to pull new years and dynamically render folders
       await fetchData();
     } catch (err: any) {

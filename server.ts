@@ -3,6 +3,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import path from "path";
 import fs from "fs/promises";
+import { Readable } from "stream";
 import multer from "multer";
 import { put, del } from "@vercel/blob";
 import { dbService } from "./server/db.js";
@@ -362,6 +363,17 @@ app.get("/api/jenis-arsip", authenticateToken, async (req, res) => {
   }
 });
 
+// 5b. OPTIONS (gabungan bandara + tahun + jenis arsip dalam satu panggilan,
+//     untuk mengurangi jumlah request di serverless)
+app.get("/api/options", authenticateToken, async (req, res) => {
+  try {
+    res.json(await dbService.getOptions());
+  } catch (error: any) {
+    console.error("Options error:", error);
+    res.status(500).json({ message: error.message || "Gagal memuat data referensi." });
+  }
+});
+
 // 6. DOKUMEN (GET with filtering, search, pagination - optimized DB query)
 app.get("/api/dokumen", authenticateToken, async (req, res) => {
   try {
@@ -627,7 +639,7 @@ function buildDownloadFilename(doc: { nama_dokumen: string; nomor_dokumen: strin
   return `${baseName}.${ext}`;
 }
 
-async function loadDocumentFile(fileUrl: string): Promise<{ buffer: Buffer; contentType: string }> {
+async function loadDocumentFile(fileUrl: string): Promise<{ body: NodeJS.ReadableStream; contentType: string; length?: number }> {
   if (!fileUrl) {
     throw new Error("File dokumen tidak tersedia.");
   }
@@ -638,19 +650,21 @@ async function loadDocumentFile(fileUrl: string): Promise<{ buffer: Buffer; cont
       throw new Error("File dokumen tidak ditemukan di penyimpanan.");
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
     const ext = getFileExtensionFromUrl(fileUrl);
     const contentType = response.headers.get("content-type") || getContentType(ext);
-    return { buffer, contentType };
+    const lengthHeader = response.headers.get("content-length");
+    const body = response.body ? Readable.fromWeb(response.body as any) : Readable.from(Buffer.alloc(0));
+    return { body, contentType, length: lengthHeader ? parseInt(lengthHeader, 10) : undefined };
   }
 
   const localPath = path.join(process.cwd(), fileUrl.replace(/^\//, ""));
   const buffer = await fs.readFile(localPath);
   const ext = getFileExtensionFromUrl(fileUrl);
-  return { buffer, contentType: getContentType(ext) };
+  return { body: Readable.from(buffer), contentType: getContentType(ext), length: buffer.length };
 }
 
-// Proxy file download / preview (menghindari masalah CORS Vercel Blob)
+// Proxy file download / preview (menghindari masalah CORS Vercel Blob).
+// Di-streaming langsung agar tidak menunggu seluruh file ter-buffer di server.
 app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
   try {
     const { id } = req.params;
@@ -660,7 +674,7 @@ app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
       return res.status(404).json({ message: "Dokumen tidak ditemukan." });
     }
 
-    const { buffer, contentType } = await loadDocumentFile(doc.file_url);
+    const { body, contentType, length } = await loadDocumentFile(doc.file_url);
     const filename = buildDownloadFilename(doc);
     const inline = req.query.inline === "1";
     const disposition = inline ? "inline" : "attachment";
@@ -668,7 +682,10 @@ app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(filename)}"`);
     res.setHeader("Cache-Control", "private, max-age=3600");
-    res.send(buffer);
+    if (length !== undefined) {
+      res.setHeader("Content-Length", String(length));
+    }
+    body.pipe(res);
   } catch (error: any) {
     console.error("Document file route error:", error);
     res.status(500).json({ message: error.message || "Gagal memuat file dokumen." });

@@ -124,20 +124,23 @@ function mapLogAktivitas(l: any): LogAktivitas {
   };
 }
 
-// Ensure every sidebar menu has a matching JenisArsip row (idempotent).
-// Runs once per process, guarded by a promise so serverless cold starts
-// only upsert the missing categories a single time.
+// Ensure every sidebar menu has a matching JenisArsip row (idempotent & fast).
+// Serverless cold starts re-run this, so it avoids per-row upserts: it checks
+// which menu names are missing and inserts them with a single createMany.
 let jenisArsipSyncPromise: Promise<void> | null = null;
 export function ensureJenisArsipSynced(): Promise<void> {
   if (!jenisArsipSyncPromise) {
     jenisArsipSyncPromise = (async () => {
-      for (const def of ARCHIVE_CATEGORIES) {
-        await prisma.jenisArsip.upsert({
-          where: { namaJenis: def.nama },
-          update: {},
-          create: { namaJenis: def.nama },
-        });
-      }
+      const existing = await prisma.jenisArsip.findMany({ select: { namaJenis: true } });
+      const existingSet = new Set(existing.map((j) => j.namaJenis));
+      const missing = ARCHIVE_CATEGORIES
+        .map((def) => def.nama)
+        .filter((nama) => !existingSet.has(nama));
+      if (missing.length === 0) return;
+      await prisma.jenisArsip.createMany({
+        data: missing.map((namaJenis) => ({ namaJenis })),
+        skipDuplicates: true,
+      });
     })().catch((err) => {
       jenisArsipSyncPromise = null;
       throw err;
@@ -276,6 +279,18 @@ export const dbService = {
     return ARCHIVE_CATEGORIES.map((def) => byNama.get(def.nama))
       .filter((j): j is NonNullable<typeof j> => !!j)
       .map(mapJenisArsip);
+  },
+
+  // Semua data referensi (bandara, tahun, jenis arsip) dikembalikan dalam SATU
+  // panggilan agar mengurangi jumlah request (penting untuk serverless yang
+  // lambat saat cold start).
+  async getOptions() {
+    const [bandara, tahun, jenis_arsip] = await Promise.all([
+      this.getBandarUdara(),
+      this.getTahun(),
+      this.getJenisArsip(),
+    ]);
+    return { bandara, tahun, jenis_arsip };
   },
 
   // Dokumen

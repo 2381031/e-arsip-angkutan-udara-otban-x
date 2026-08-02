@@ -65,6 +65,33 @@ export const prisma = globalForPrisma.prisma || createPrismaClient();
 // Always cache in production (serverless) to prevent connection exhaustion
 globalForPrisma.prisma = prisma;
 
+// ── Cache ringan dalam proses untuk data yang jarang berubah ──────────────
+// Sangat membantu di serverless: setiap instance melayani banyak request,
+// jadi hasil query yang sudah dihitung dipakai ulang selama TTL, mengurangi
+// jumlah round-trip ke database secara drastis. Dibersihkan saat ada mutasi.
+interface MemEntry {
+  value: unknown;
+  expiresAt: number;
+}
+const memCache = new Map<string, MemEntry>();
+
+async function cachedQuery<T>(key: string, ttlMs: number, loader: () => Promise<T>): Promise<T> {
+  const now = Date.now();
+  const entry = memCache.get(key);
+  if (entry && entry.expiresAt > now) return entry.value as T;
+  const value = await loader();
+  memCache.set(key, { value, expiresAt: now + ttlMs });
+  return value;
+}
+
+function invalidateCache(...keys: string[]) {
+  if (keys.length === 0) {
+    memCache.clear();
+    return;
+  }
+  for (const k of keys) memCache.delete(k);
+}
+
 // Mapping functions to keep exact backward-compatibility with front-end property names
 function mapAdmin(a: any): Admin {
   return {
@@ -141,6 +168,7 @@ export function ensureJenisArsipSynced(): Promise<void> {
         data: missing.map((namaJenis) => ({ namaJenis })),
         skipDuplicates: true,
       });
+      invalidateCache("jenis-arsip");
     })().catch((err) => {
       jenisArsipSyncPromise = null;
       throw err;
@@ -211,10 +239,12 @@ export const dbService = {
 
   // Bandar Udara
   async getBandarUdara(): Promise<BandarUdara[]> {
-    const list = await prisma.bandarUdara.findMany({
-      orderBy: { namaBandara: "asc" },
+    return cachedQuery("bandara", 60_000, async () => {
+      const list = await prisma.bandarUdara.findMany({
+        orderBy: { namaBandara: "asc" },
+      });
+      return list.map(mapBandarUdara);
     });
-    return list.map(mapBandarUdara);
   },
 
   async addBandarUdara(namaBandara: string): Promise<BandarUdara> {
@@ -223,6 +253,7 @@ export const dbService = {
         namaBandara: namaBandara.trim(),
       },
     });
+    invalidateCache("bandara");
     return mapBandarUdara(item);
   },
 
@@ -233,6 +264,7 @@ export const dbService = {
         namaBandara: namaBandara.trim(),
       },
     });
+    invalidateCache("bandara");
     return item ? mapBandarUdara(item) : null;
   },
 
@@ -247,6 +279,7 @@ export const dbService = {
       await prisma.bandarUdara.delete({
         where: { id },
       });
+      invalidateCache("bandara");
       return true;
     } catch {
       return false;
@@ -255,10 +288,12 @@ export const dbService = {
 
   // Tahun
   async getTahun(): Promise<Tahun[]> {
-    const list = await prisma.tahun.findMany({
-      orderBy: { tahun: "asc" },
+    return cachedQuery("tahun", 60_000, async () => {
+      const list = await prisma.tahun.findMany({
+        orderBy: { tahun: "asc" },
+      });
+      return list.map(mapTahun);
     });
-    return list.map(mapTahun);
   },
 
   async addTahun(tahunVal: string): Promise<Tahun> {
@@ -267,18 +302,21 @@ export const dbService = {
         tahun: tahunVal.trim(),
       },
     });
+    invalidateCache("tahun");
     return mapTahun(item);
   },
 
   // Jenis Arsip (Kategori)
   async getJenisArsip(): Promise<JenisArsip[]> {
     await ensureJenisArsipSynced();
-    const list = await prisma.jenisArsip.findMany();
-    const byNama = new Map(list.map((j) => [j.namaJenis, j]));
-    // Hanya kategori yang sesuai menu, dalam urutan menu sidebar (atas ke bawah).
-    return ARCHIVE_CATEGORIES.map((def) => byNama.get(def.nama))
-      .filter((j): j is NonNullable<typeof j> => !!j)
-      .map(mapJenisArsip);
+    return cachedQuery("jenis-arsip", 60_000, async () => {
+      const list = await prisma.jenisArsip.findMany();
+      const byNama = new Map(list.map((j) => [j.namaJenis, j]));
+      // Hanya kategori yang sesuai menu, dalam urutan menu sidebar (atas ke bawah).
+      return ARCHIVE_CATEGORIES.map((def) => byNama.get(def.nama))
+        .filter((j): j is NonNullable<typeof j> => !!j)
+        .map(mapJenisArsip);
+    });
   },
 
   // Semua data referensi (bandara, tahun, jenis arsip) dikembalikan dalam SATU
@@ -363,6 +401,7 @@ export const dbService = {
         tanggalDokumen: data.tanggal_dokumen || null,
       },
     });
+    invalidateCache();
     return mapDokumen(item);
   },
 
@@ -380,6 +419,7 @@ export const dbService = {
       where: { id },
       data: updateData,
     });
+    invalidateCache();
     return item ? mapDokumen(item) : null;
   },
 
@@ -388,6 +428,7 @@ export const dbService = {
       await prisma.dokumen.delete({
         where: { id },
       });
+      invalidateCache();
       return true;
     } catch {
       return false;
@@ -396,96 +437,100 @@ export const dbService = {
 
   // Optimized: Get document count grouped by tahunId for a specific category
   async getYearCountsByCategory(jenisArsipId?: string): Promise<Record<string, number>> {
-    const where: any = {};
-    if (jenisArsipId) where.jenisArsipId = jenisArsipId;
+    return cachedQuery(`year-counts:${jenisArsipId || "all"}`, 30_000, async () => {
+      const where: any = {};
+      if (jenisArsipId) where.jenisArsipId = jenisArsipId;
 
-    const groups = await prisma.dokumen.groupBy({
-      by: ["tahunId"],
-      where,
-      _count: { id: true },
+      const groups = await prisma.dokumen.groupBy({
+        by: ["tahunId"],
+        where,
+        _count: { id: true },
+      });
+
+      const counts: Record<string, number> = {};
+      for (const g of groups) {
+        counts[g.tahunId] = g._count.id;
+      }
+      return counts;
     });
-
-    const counts: Record<string, number> = {};
-    for (const g of groups) {
-      counts[g.tahunId] = g._count.id;
-    }
-    return counts;
   },
 
   // Optimized: Get dashboard metrics without loading all documents
   async getDashboardMetrics() {
-    const currentYear = new Date().getFullYear().toString();
+    return cachedQuery("dashboard-metrics", 30_000, async () => {
+      const currentYear = new Date().getFullYear().toString();
 
-    const [totalDokumen, categories, years, docsByCategoryRaw, docsByYearRaw] = await Promise.all([
-      prisma.dokumen.count(),
-      prisma.jenisArsip.findMany({ orderBy: { namaJenis: "asc" } }),
-      prisma.tahun.findMany({ orderBy: { tahun: "asc" } }),
-      prisma.dokumen.groupBy({ by: ["jenisArsipId"], _count: { id: true } }),
-      prisma.dokumen.groupBy({ by: ["tahunId"], _count: { id: true } }),
-    ]);
+      const [totalDokumen, categories, years, docsByCategoryRaw, docsByYearRaw] = await Promise.all([
+        prisma.dokumen.count(),
+        prisma.jenisArsip.findMany({ orderBy: { namaJenis: "asc" } }),
+        prisma.tahun.findMany({ orderBy: { tahun: "asc" } }),
+        prisma.dokumen.groupBy({ by: ["jenisArsipId"], _count: { id: true } }),
+        prisma.dokumen.groupBy({ by: ["tahunId"], _count: { id: true } }),
+      ]);
 
-    // Find current year Tahun record
-    const currentTahun = years.find(y => y.tahun === currentYear);
-    const totalUploadTahunIni = currentTahun
-      ? (docsByYearRaw.find(y => y.tahunId === currentTahun.tahun)?._count.id || 0)
-      : 0;
+      // Find current year Tahun record
+      const currentTahun = years.find(y => y.tahun === currentYear);
+      const totalUploadTahunIni = currentTahun
+        ? (docsByYearRaw.find(y => y.tahunId === currentTahun.tahun)?._count.id || 0)
+        : 0;
 
-    // Map docsByCategoryRaw (hanya kategori yang sesuai menu)
-    const catMap = new Map(categories.map(c => [c.id, c.namaJenis]));
-    const menuNames = new Set(ARCHIVE_CATEGORIES.map(c => c.nama.toLowerCase()));
-    const docsByCategory = docsByCategoryRaw
-      .filter(d => {
-        const name = (catMap.get(d.jenisArsipId) || "").toLowerCase();
-        return name && menuNames.has(name);
-      })
-      .map(d => ({
-        name: catMap.get(d.jenisArsipId) || "Unknown",
+      // Map docsByCategoryRaw (hanya kategori yang sesuai menu)
+      const catMap = new Map(categories.map(c => [c.id, c.namaJenis]));
+      const menuNames = new Set(ARCHIVE_CATEGORIES.map(c => c.nama.toLowerCase()));
+      const docsByCategory = docsByCategoryRaw
+        .filter(d => {
+          const name = (catMap.get(d.jenisArsipId) || "").toLowerCase();
+          return name && menuNames.has(name);
+        })
+        .map(d => ({
+          name: catMap.get(d.jenisArsipId) || "Unknown",
+          value: d._count.id,
+        }));
+
+      // Map docsByYearRaw
+      const yearMap = new Map(years.map(y => [y.id, y.tahun]));
+      const docsByYear = docsByYearRaw.map(d => ({
+        name: yearMap.get(d.tahunId) || "Unknown",
         value: d._count.id,
       }));
 
-    // Map docsByYearRaw
-    const yearMap = new Map(years.map(y => [y.id, y.tahun]));
-    const docsByYear = docsByYearRaw.map(d => ({
-      name: yearMap.get(d.tahunId) || "Unknown",
-      value: d._count.id,
-    }));
+      // Get recent 5 documents with joins
+      const recentDocsRaw = await prisma.dokumen.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      });
+      const airports = await prisma.bandarUdara.findMany();
+      const airportMap = new Map(airports.map(a => [a.id, a.namaBandara]));
+      const yearMap2 = new Map(years.map(y => [y.id, y.tahun]));
+      const catMap2 = new Map(categories.map(c => [c.id, c.namaJenis]));
 
-    // Get recent 5 documents with joins
-    const recentDocsRaw = await prisma.dokumen.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
+      const recentDocs = recentDocsRaw.map(d => ({
+        id: d.id,
+        nama_dokumen: d.namaDokumen,
+        nomor_dokumen: d.nomorDokumen,
+        keterangan: d.keterangan || "",
+        jenis_arsip_id: d.jenisArsipId,
+        bandara_id: d.bandaraId,
+        tahun_id: d.tahunId,
+        file_url: d.fileUrl,
+        uploaded_by: d.uploadedBy,
+        created_at: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
+        updated_at: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : d.updatedAt,
+        tanggal_dokumen: d.tanggalDokumen || undefined,
+        nama_bandara: airportMap.get(d.bandaraId) || "Unknown Airport",
+        tahun: yearMap2.get(d.tahunId) || "Unknown Year",
+        nama_kategori: catMap2.get(d.jenisArsipId) || "Unknown Category",
+      }));
+
+      return {
+        totalDokumen,
+        totalUploadTahunIni,
+        totalKategori: categories.length,
+        docsByCategory,
+        docsByYear,
+        recentDocs,
+      };
     });
-    const airports = await prisma.bandarUdara.findMany();
-    const airportMap = new Map(airports.map(a => [a.id, a.namaBandara]));
-    const yearMap2 = new Map(years.map(y => [y.id, y.tahun]));
-    const catMap2 = new Map(categories.map(c => [c.id, c.namaJenis]));
-
-    const recentDocs = recentDocsRaw.map(d => ({
-      id: d.id,
-      nama_dokumen: d.namaDokumen,
-      nomor_dokumen: d.nomorDokumen,
-      keterangan: d.keterangan || "",
-      jenis_arsip_id: d.jenisArsipId,
-      bandara_id: d.bandaraId,
-      tahun_id: d.tahunId,
-      file_url: d.fileUrl,
-      uploaded_by: d.uploadedBy,
-      created_at: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
-      updated_at: d.updatedAt instanceof Date ? d.updatedAt.toISOString() : d.updatedAt,
-      tanggal_dokumen: d.tanggalDokumen || undefined,
-      nama_bandara: airportMap.get(d.bandaraId) || "Unknown Airport",
-      tahun: yearMap2.get(d.tahunId) || "Unknown Year",
-      nama_kategori: catMap2.get(d.jenisArsipId) || "Unknown Category",
-    }));
-
-    return {
-      totalDokumen,
-      totalUploadTahunIni,
-      totalKategori: categories.length,
-      docsByCategory,
-      docsByYear,
-      recentDocs,
-    };
   },
 
   // Activity Logs

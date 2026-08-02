@@ -12,6 +12,13 @@ const app = express();
 const PORT = 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "otban-x-super-secret-key-2026";
 
+// Header cache untuk endpoint read-only agar akses terasa cepat (turbo):
+// - "public" => boleh di-cache browser & CDN (data referensi, tidak sensitif)
+// - "private" => hanya cache di browser per pengguna
+function setCache(res: any, mode: "public" | "private", ttlSec: number) {
+  res.setHeader("Cache-Control", `${mode}, max-age=${ttlSec}${mode === "public" ? `, s-maxage=${ttlSec}` : ""}`);
+}
+
 // Prevent unhandled rejections from crashing the serverless function
 process.on("unhandledRejection", (err: any) => {
   console.error("[UNHANDLED REJECTION]", err?.message || err);
@@ -258,6 +265,7 @@ app.delete("/api/admins/:id", authenticateToken, async (req: any, res) => {
 // 3. BANDAR UDARA (Airports)
 app.get("/api/bandara", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "public", 60);
     res.json(await dbService.getBandarUdara());
   } catch (error: any) {
     console.error("Bandara list error:", error);
@@ -329,6 +337,7 @@ app.delete("/api/bandara/:id", authenticateToken, async (req: any, res) => {
 // 4. TAHUN
 app.get("/api/tahun", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "public", 60);
     res.json(await dbService.getTahun());
   } catch (error: any) {
     console.error("Tahun list error:", error);
@@ -356,6 +365,7 @@ app.post("/api/tahun", authenticateToken, async (req: any, res) => {
 // 5. JENIS ARSIP (CATEGORIES)
 app.get("/api/jenis-arsip", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "public", 60);
     res.json(await dbService.getJenisArsip());
   } catch (error: any) {
     console.error("Jenis arsip list error:", error);
@@ -367,6 +377,7 @@ app.get("/api/jenis-arsip", authenticateToken, async (req, res) => {
 //     untuk mengurangi jumlah request di serverless)
 app.get("/api/options", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "public", 60);
     res.json(await dbService.getOptions());
   } catch (error: any) {
     console.error("Options error:", error);
@@ -495,6 +506,7 @@ const fileUrl = blob.url;
 // 7b. YEAR COUNTS (must be BEFORE :id routes to avoid route collision)
 app.get("/api/dokumen/year-counts", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "private", 30);
     const { jenis_arsip_id } = req.query;
     const counts = await dbService.getYearCountsByCategory(jenis_arsip_id as string | undefined);
     res.json(counts);
@@ -695,6 +707,7 @@ app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
 // 7. DASHBOARD METRICS (optimized - no full table scan)
 app.get("/api/dashboard/metrics", authenticateToken, async (req, res) => {
   try {
+    setCache(res, "private", 30);
     const metrics = await dbService.getDashboardMetrics();
     res.json(metrics);
   } catch (error: any) {
@@ -705,6 +718,7 @@ app.get("/api/dashboard/metrics", authenticateToken, async (req, res) => {
 
 // 8. LOGS LIST WITH PAGINATION (optimized DB query)
 app.get("/api/logs", authenticateToken, async (req, res) => {
+  setCache(res, "private", 30);
   const { page, limit } = req.query;
   const pageNum = parseInt(String(page || "1"), 10);
   const limitNum = parseInt(String(limit || "15"), 10);

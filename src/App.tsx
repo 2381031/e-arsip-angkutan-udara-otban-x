@@ -5,6 +5,7 @@ import { LoginScreen } from "./components/LoginScreen.js";
 import { ToastContainer, ToastMessage, ToastType } from "./components/Toast.js";
 import { ActiveMenu, Tahun, Dokumen } from "./types.js";
 import { categoryNameToMenu } from "./utils/archiveCategories.js";
+import { getOptions } from "./utils/apiCache.js";
 
 const DashboardView = lazy(() => import("./components/DashboardView.js").then(m => ({ default: m.DashboardView })));
 const DocumentManager = lazy(() => import("./components/DocumentManager.js").then(m => ({ default: m.DocumentManager })));
@@ -121,6 +122,14 @@ export default function App() {
     setSidebarCollapsed(val);
     localStorage.setItem("sidebar_collapsed", String(val));
   };
+
+  // Prefetch data & chunk yang paling sering dipakai setelah login/restore sesi,
+  // sehingga navigasi ke folder arsip terasa instan.
+  useEffect(() => {
+    if (!token) return;
+    getOptions(token).catch(() => {});
+    import("./components/DocumentManager.js").catch(() => {});
+  }, [token]);
 
   // Toast helper
   const addToast = (message: string, type: ToastType = "success") => {

@@ -28,6 +28,7 @@ import {
   logDocumentDownload,
 } from "../utils/documentFile.js";
 import { findCategoryForMenu, sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import { CategorySelect } from "./CategorySelect.js";
 
 interface DocumentManagerProps {
   token: string;
@@ -800,16 +801,12 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                   Kategori / Jenis Arsip
                 </label>
-                <select
+                <CategorySelect
                   value={formKategoriId}
-                  onChange={(e) => setFormKategoriId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition text-sm"
-                  required
-                >
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.nama_jenis}</option>
-                  ))}
-                </select>
+                  onChange={setFormKategoriId}
+                  categories={categories}
+                  disabled={uploading}
+                />
               </div>
 
               <div>
@@ -1009,16 +1006,11 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
                   Kategori
                 </label>
-                <select
+                <CategorySelect
                   value={formKategoriId}
-                  onChange={(e) => setFormKategoriId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition text-sm"
-                  required
-                >
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.nama_jenis}</option>
-                  ))}
-                </select>
+                  onChange={setFormKategoriId}
+                  categories={categories}
+                />
               </div>
 
               <div>

@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { ARCHIVE_CATEGORIES } from "../src/utils/archiveCategories.js";
 
 // Define TypeScript interfaces for our local database
 export interface Admin {
@@ -121,6 +122,28 @@ function mapLogAktivitas(l: any): LogAktivitas {
     detail: l.detail || "",
     tanggal: l.tanggal instanceof Date ? l.tanggal.toISOString() : l.tanggal,
   };
+}
+
+// Ensure every sidebar menu has a matching JenisArsip row (idempotent).
+// Runs once per process, guarded by a promise so serverless cold starts
+// only upsert the missing categories a single time.
+let jenisArsipSyncPromise: Promise<void> | null = null;
+export function ensureJenisArsipSynced(): Promise<void> {
+  if (!jenisArsipSyncPromise) {
+    jenisArsipSyncPromise = (async () => {
+      for (const def of ARCHIVE_CATEGORIES) {
+        await prisma.jenisArsip.upsert({
+          where: { namaJenis: def.nama },
+          update: {},
+          create: { namaJenis: def.nama },
+        });
+      }
+    })().catch((err) => {
+      jenisArsipSyncPromise = null;
+      throw err;
+    });
+  }
+  return jenisArsipSyncPromise;
 }
 
 export const dbService = {
@@ -246,6 +269,7 @@ export const dbService = {
 
   // Jenis Arsip (Kategori)
   async getJenisArsip(): Promise<JenisArsip[]> {
+    await ensureJenisArsipSynced();
     const list = await prisma.jenisArsip.findMany({
       orderBy: { namaJenis: "asc" },
     });

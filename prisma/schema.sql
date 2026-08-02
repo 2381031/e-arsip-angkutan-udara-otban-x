@@ -84,12 +84,12 @@ INSERT INTO jenis_arsip (nama_jenis) VALUES
 ('Perintis'),
 ('Delay Management'),
 ('Haji'),
-('Peraturan'),
 ('Rekonsiliasi'),
 ('Bimbingan Teknis'),
+('Peraturan'),
 ('Rapat'),
 ('Surat'),
-('Nota dinas')
+('Nota Dinas')
 ON CONFLICT (nama_jenis) DO NOTHING;
 
 INSERT INTO bandar_udara (nama_bandara) VALUES 

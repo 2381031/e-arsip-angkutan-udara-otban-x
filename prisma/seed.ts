@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { ARCHIVE_CATEGORIES } from "../src/utils/archiveCategories.js";
 
 const prisma = new PrismaClient();
 
@@ -13,29 +14,11 @@ async function main() {
     },
   });
 
-  const jenisArsip = [
-    "PPRP 14 Hari",
-    "Pengawasan PPRP",
-    "Lalu Lintas",
-    "Flight Approval",
-    "Pelayanan",
-    "Tarif",
-    "Perintis",
-    "Delay Management",
-    "Haji",
-    "Peraturan",
-    "Rekonsiliasi",
-    "Bimbingan Teknis",
-    "Rapat",
-    "Surat",
-    "Nota dinas",
-  ];
-
-  for (const nama of jenisArsip) {
+  for (const def of ARCHIVE_CATEGORIES) {
     await prisma.jenisArsip.upsert({
-      where: { namaJenis: nama },
+      where: { namaJenis: def.nama },
       update: {},
-      create: { namaJenis: nama },
+      create: { namaJenis: def.nama },
     });
   }
 

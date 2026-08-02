@@ -31,8 +31,6 @@
       "vite/client"
     ],
 
-    "baseUrl": ".",
-
     "paths": {
       "@/*": [
         "./*"

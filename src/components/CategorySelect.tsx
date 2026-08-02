@@ -72,11 +72,9 @@ export const CategorySelect: React.FC<CategorySelectProps> = ({
         <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-56 overflow-y-auto">
           {groups.map(({ group, items }) => (
             <div key={group}>
-              {group !== "Lainnya" && (
-                <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40">
-                  {group}
-                </div>
-              )}
+              <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40">
+                {group === "Lainnya" ? "Menu Lainnya" : group}
+              </div>
               {items.map((c) => (
                 <button
                   key={c.id}

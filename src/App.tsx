@@ -141,7 +141,6 @@ export default function App() {
     setToken(newToken);
     setUser(newUser);
 
-    // If remember me is handled inside LoginScreen, we will store credentials in localStorage
     const savedRemember = localStorage.getItem("remembered_username");
     if (savedRemember) {
       localStorage.setItem("auth_token", newToken);

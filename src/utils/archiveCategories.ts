@@ -81,3 +81,21 @@ export function categoryNameToMenu(namaKategori: string): ActiveMenu {
   const slug = categoryNameToSlug(namaKategori);
   return CATEGORY_SLUG_TO_MENU[slug] || "lalu_lintas";
 }
+
+// Nama tampilan yang enak dibaca untuk menu sidebar (mis. "pprp_14_hari" -> "PPRP 14 Hari").
+export function menuToDisplayName(menu: ActiveMenu): string {
+  const def = ARCHIVE_CATEGORIES.find((c) => c.menu === menu);
+  if (def) return def.nama;
+  switch (menu) {
+    case "dashboard":
+      return "Dashboard";
+    case "airports":
+      return "Daftar Bandara";
+    case "admins":
+      return "Kelola Admin";
+    case "logs":
+      return "Log Aktivitas";
+    default:
+      return menu.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}

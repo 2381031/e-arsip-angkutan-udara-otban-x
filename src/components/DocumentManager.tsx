@@ -27,7 +27,7 @@ import {
   isPdfFile,
   logDocumentDownload,
 } from "../utils/documentFile.js";
-import { findCategoryForMenu, sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import { findCategoryForMenu, menuToDisplayName, sortCategoriesByMenu } from "../utils/archiveCategories.js";
 import { CategorySelect } from "./CategorySelect.js";
 
 interface DocumentManagerProps {
@@ -179,7 +179,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
 
   // Sync breadcrumbs with parents
   useEffect(() => {
-    const categoryTitle = activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1).replace("_", " ");
+    const categoryTitle = menuToDisplayName(activeCategory);
     if (selectedYear) {
       updateBreadcrumb([categoryTitle, `Tahun ${selectedYear.tahun}`]);
     } else {
@@ -458,7 +458,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
             <div>
               <h2 className="font-display font-extrabold text-2xl text-slate-900 dark:text-white capitalize">
-                Arsip {activeCategory.replace("_", " ")}
+                Arsip {menuToDisplayName(activeCategory)}
               </h2>
               <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1">
                 Seluruh berkas dikelompokkan otomatis ke dalam folder tahun di bawah berdasarkan tanggal berkas.
@@ -526,7 +526,7 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
               </button>
               <div>
                 <h2 className="font-display font-extrabold text-xl text-slate-900 dark:text-white capitalize">
-                  Folder Tahun: {selectedYear.tahun} ({activeCategory.replace("_", " ")})
+                  Folder Tahun: {selectedYear.tahun} ({menuToDisplayName(activeCategory)})
                 </h2>
                 <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
                   Berisi dokumen angkutan udara yang terdaftar pada tahun {selectedYear.tahun}

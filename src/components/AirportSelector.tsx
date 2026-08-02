@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plane, Calendar, ChevronRight, Folder, MapPin, ArrowLeft, Plus, X, Upload } from "lucide-react";
 import { BandarUdara, Tahun, ActiveMenu, JenisArsip } from "../types.js";
-import { findCategoryForMenu, sortCategoriesByMenu } from "../utils/archiveCategories.js";
+import { findCategoryForMenu, menuToDisplayName, sortCategoriesByMenu } from "../utils/archiveCategories.js";
 import { CategorySelect } from "./CategorySelect.js";
 
 interface AirportSelectorProps {
@@ -71,7 +71,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
 
   // Handle breadcrumbs representation
   useEffect(() => {
-    const categoryLabel = activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1).replace("_", " ");
+    const categoryLabel = menuToDisplayName(activeCategory);
     if (selectedAirport) {
       updateBreadcrumb([categoryLabel, selectedAirport.nama_bandara]);
     } else {
@@ -150,7 +150,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
     );
   }
 
-  const categoryTitle = activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1).replace("_", " ");
+  const categoryTitle = menuToDisplayName(activeCategory);
 
   return (
     <div className="space-y-6 animate-fade-in">

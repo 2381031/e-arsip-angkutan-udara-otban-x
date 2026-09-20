@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { DashboardMetrics, Dokumen } from "../types.js";
 import { sortCategoryItemsByMenu } from "../utils/archiveCategories.js";
+import { getDashboardMetrics, peekCache } from "../utils/apiCache.js";
 import {
   downloadDocument,
   getFileExtension,
@@ -45,16 +46,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   addToast,
   onPreviewDocument,
 }) => {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(
+    () => peekCache<DashboardMetrics>("dashboard-metrics") ?? null
+  );
+  const [loading, setLoading] = useState(() => !peekCache<DashboardMetrics>("dashboard-metrics"));
 
   const fetchMetrics = async () => {
     try {
-      const res = await fetch("/api/dashboard/metrics", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load dashboard metrics");
+      const data = await getDashboardMetrics(token);
       setMetrics(data);
     } catch (err: any) {
       addToast(err.message || "Gagal memuat metrik dashboard", "error");

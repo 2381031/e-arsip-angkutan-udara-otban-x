@@ -339,7 +339,9 @@ export const dbService = {
     return list.map(mapDokumen);
   },
 
-  // Optimized: Get filtered + paginated documents without loading all rows
+  // Optimized: Get filtered + paginated documents without loading all rows.
+  // Dibungkus cache pendek (15s) karena ini query terbanyak saat membuka
+  // folder tahun. Mutasi dokumen memanggil invalidateCache() sehingga tetap segar.
   async getDokumenFiltered(params: {
     search?: string;
     jenis_arsip_id?: string;
@@ -349,36 +351,46 @@ export const dbService = {
     limit?: number;
   }) {
     const { search, jenis_arsip_id, bandara_id, tahun_id, page = 1, limit = 10 } = params;
+    const cacheKey = "dokumen:" + JSON.stringify([
+      jenis_arsip_id || "",
+      bandara_id || "",
+      tahun_id || "",
+      (search || "").toLowerCase(),
+      page,
+      limit,
+    ]);
 
-    const where: any = {};
-    if (jenis_arsip_id) where.jenisArsipId = jenis_arsip_id;
-    if (bandara_id) where.bandaraId = bandara_id;
-    if (tahun_id) where.tahunId = tahun_id;
-    if (search) {
-      const s = search.toLowerCase();
-      where.OR = [
-        { namaDokumen: { contains: s, mode: "insensitive" } },
-        { nomorDokumen: { contains: s, mode: "insensitive" } },
-        { keterangan: { contains: s, mode: "insensitive" } },
-      ];
-    }
+    return cachedQuery(cacheKey, 15_000, async () => {
+      const where: any = {};
+      if (jenis_arsip_id) where.jenisArsipId = jenis_arsip_id;
+      if (bandara_id) where.bandaraId = bandara_id;
+      if (tahun_id) where.tahunId = tahun_id;
+      if (search) {
+        const s = search.toLowerCase();
+        where.OR = [
+          { namaDokumen: { contains: s, mode: "insensitive" } },
+          { nomorDokumen: { contains: s, mode: "insensitive" } },
+          { keterangan: { contains: s, mode: "insensitive" } },
+        ];
+      }
 
-    const total = await prisma.dokumen.count({ where });
-    const totalPages = Math.ceil(total / limit);
-    const offset = (page - 1) * limit;
+      const total = await prisma.dokumen.count({ where });
+      const totalPages = Math.ceil(total / limit);
+      const offset = (page - 1) * limit;
 
-    const list = await prisma.dokumen.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: offset,
-      take: limit,
+      const list = await prisma.dokumen.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: offset,
+        take: limit,
+      });
+
+      return {
+        data: list.map(mapDokumen),
+        total,
+        totalPages,
+      };
     });
-
-    return {
-      data: list.map(mapDokumen),
-      total,
-      totalPages,
-    };
   },
 
   // Optimized: Find single document by ID

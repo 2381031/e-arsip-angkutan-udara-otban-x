@@ -28,7 +28,7 @@ import {
   logDocumentDownload,
 } from "../utils/documentFile.js";
 import { findCategoryForMenu, menuToDisplayName, sortCategoriesByMenu } from "../utils/archiveCategories.js";
-import { getOptions, getYearCounts, invalidateDataCache } from "../utils/apiCache.js";
+import { getOptions, getYearCounts, getDokumenList, peekCache, invalidateDataCache, type DokumenListResponse } from "../utils/apiCache.js";
 import { CategorySelect } from "./CategorySelect.js";
 
 interface DocumentManagerProps {
@@ -112,24 +112,28 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
   // Main documents fetch
   const fetchDocuments = async () => {
     if (!selectedYear) return;
+    let query = `?page=${page}&limit=8`;
+    if (search) query += `&search=${encodeURIComponent(search)}`;
+    query += `&tahun_id=${selectedYear.id}`;
+    
+    // Scoped by category
+    const activeCatObj = findCategoryForMenu(categories, activeCategory);
+    if (activeCatObj) {
+      query += `&jenis_arsip_id=${activeCatObj.id}`;
+    }
+
+    // Folder yang sudah pernah dibuka → langsung tampil dari cache (instan).
+    const cached = peekCache<DokumenListResponse>(`dokumen:${query}`);
+    if (cached) {
+      setDocuments(cached.data);
+      setTotalPages(cached.pagination.totalPages);
+      setTotalDocs(cached.pagination.total);
+      return;
+    }
+
     setLoading(true);
     try {
-      let query = `?page=${page}&limit=8`;
-      if (search) query += `&search=${encodeURIComponent(search)}`;
-      query += `&tahun_id=${selectedYear.id}`;
-      
-      // Scoped by category
-      const activeCatObj = findCategoryForMenu(categories, activeCategory);
-      if (activeCatObj) {
-        query += `&jenis_arsip_id=${activeCatObj.id}`;
-      }
-
-      const res = await fetch(`/api/dokumen${query}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load documents");
-
+      const data = await getDokumenList(token, query);
       setDocuments(data.data);
       setTotalPages(data.pagination.totalPages);
       setTotalDocs(data.pagination.total);

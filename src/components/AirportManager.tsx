@@ -14,7 +14,7 @@ export const AirportManager: React.FC<AirportManagerProps> = ({
   const [airports, setAirports] = useState<BandarUdara[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal forms
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedAirport, setSelectedAirport] = useState<BandarUdara | null>(null);

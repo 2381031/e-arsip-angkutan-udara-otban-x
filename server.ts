@@ -693,7 +693,9 @@ app.get("/api/dokumen/:id/file", authenticateToken, async (req: any, res) => {
 
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `${disposition}; filename="${encodeURIComponent(filename)}"`);
-    res.setHeader("Cache-Control", "private, max-age=3600");
+    // File arsip tidak pernah berubah setelah diunggah (URL unik per berkas),
+    // jadi browser boleh menyimpannya seharian penuh tanpa fetch ulang.
+    res.setHeader("Cache-Control", "private, max-age=86400, stale-while-revalidate=86400");
     if (length !== undefined) {
       res.setHeader("Content-Length", String(length));
     }

@@ -25,6 +25,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
   const [categories, setCategories] = useState<JenisArsip[]>([]);
   const [selectedAirport, setSelectedAirport] = useState<BandarUdara | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // Upload Form State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -36,9 +37,11 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
   const [formFile, setFormFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Fetch initial airport, year, and category listings - satu panggilan, di-cache
+  // Fetch initial airport, year, and category listings - satu panggilan, di-cache.
+  // Hanya tampilkan spinner saat muatan pertama; ganti kategori berikutnya
+  // memakai cache jadi instan tanpa flash.
   const fetchData = async () => {
-    setLoading(true);
+    if (!hasLoadedOnce) setLoading(true);
     try {
       const data = await getOptions(token);
       setAirports(data.bandara);
@@ -48,6 +51,7 @@ export const AirportSelector: React.FC<AirportSelectorProps> = ({
       addToast(err.message || "Gagal memuat data dari database", "error");
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 

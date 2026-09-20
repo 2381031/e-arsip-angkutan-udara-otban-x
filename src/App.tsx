@@ -5,7 +5,7 @@ import { LoginScreen } from "./components/LoginScreen.js";
 import { ToastContainer, ToastMessage, ToastType } from "./components/Toast.js";
 import { ActiveMenu, Tahun, Dokumen } from "./types.js";
 import { categoryNameToMenu } from "./utils/archiveCategories.js";
-import { getOptions } from "./utils/apiCache.js";
+import { getOptions, getDashboardMetrics } from "./utils/apiCache.js";
 
 const DashboardView = lazy(() => import("./components/DashboardView.js").then(m => ({ default: m.DashboardView })));
 const DocumentManager = lazy(() => import("./components/DocumentManager.js").then(m => ({ default: m.DocumentManager })));
@@ -127,8 +127,26 @@ export default function App() {
   // sehingga navigasi ke folder arsip terasa instan.
   useEffect(() => {
     if (!token) return;
+    // Data yang hampir pasti dibutuhkan: referensi + metrik dashboard.
     getOptions(token).catch(() => {});
-    import("./components/DocumentManager.js").catch(() => {});
+    getDashboardMetrics(token).catch(() => {});
+
+    // Siapkan SEMUA chunk view saat browser idle, supaya pindah menu manapun
+    // tidak pernah menampilkan spinner "Memuat halaman...".
+    const prefetchChunks = () => {
+      Promise.all([
+        import("./components/DashboardView.js"),
+        import("./components/DocumentManager.js"),
+        import("./components/AirportManager.js"),
+        import("./components/AdminManager.js"),
+        import("./components/ActivityLogs.js"),
+      ]).catch(() => {});
+    };
+    if ("requestIdleCallback" in window) {
+      (window as any).requestIdleCallback(prefetchChunks, { timeout: 3000 });
+    } else {
+      setTimeout(prefetchChunks, 500);
+    }
   }, [token]);
 
   // Toast helper
